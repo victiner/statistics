@@ -1,0 +1,836 @@
+SCHOOL EXAMINATION
+TECH3
+
+Spring, 2025
+Date: June 4. 2025
+
+Time: 09:00-13:00
+
+Number of hours: 4
+
+
+An invigilator can contact course responsible by phone: +47 995 72 636
+
+
+
+
+SUPPORT MATERIALS PERMITTED DURING THE EXAMINATION:
+Calculator Yes □
+               ✓ No □
+Dictionary: one bilingual dictionary permitted.
+
+
+
+No other support materials permitted.
+
+
+
+Number of pages, including front page: 17
+
+
+
+
+                                           1
+Note that in appendix D (at the end), you will find a collection of formulas and
+definitions that may be useful for some of the exercises. Each task (a,b,c, etc.) is worth
+the same amount of points for the grading.
+Problem 1
+You are presented two graphs. Figure 1a) is an illustration that was published on Twitter
+by the official White House account for the Obama administration showing an increase in
+high school graduation rate under Obama’s presidency (2009-2017). The second graph
+was presented on Fox News during the 2012 Republican nomination. For each of the
+graphs, (a) and (b), discuss in a few sentences whether you think these are good
+graphics? Justify your answer.
+
+
+
+
+Figure 1: a) Graduation rate under President Obama, posted on Twitter (now X), by the
+White House. b) Fox News presenting support for various Republican nominees for the 2012 US
+election.
+
+
+Problem 2
+Below are two lists of statements. Give a short explanation why each are wrong.
+  a)    i) A p-value tells us the probability that the null hypothesis is true.
+       ii) A small p-value proves that the alternative hypothesis is true.
+       iii) A Type I error occurs when we fail to reject a false null hypothesis.
+  b)    i) In linear regression, the R2 value always increases when more predictors are
+           added, so we should keep adding predictors.
+       ii) Correlation measures how strong a nonlinear relationship is between two vari-
+           ables.
+       iii) In a simple linear regression, the residuals should be normally distributed for
+            the model to be valid.
+Problem 3
+A startup offering hands-on craft beer brewing workshops is piloting a weekend course
+format. Each session runs on Saturdays only and is limited to 4 participants due to space
+and brewing setup constraints. Based on early demand, the number of participants X
+per Saturday follows this discrete distribution:
+
+
+
+
+                                             2
+                  Participants (X)       0       1      2      3      4
+                  Probability P(X=x)     0.10    0.25   0.30   0.20   0.15
+
+
+Each participant pays NOK 2,200, and costs the company NOK 250 in materials.
+There is also a fixed cost of NOK 4,200 per workshop. The company starts with NOK
+50,000 in capital and plans to run the workshop every Saturday for one year (52
+weeks).
+  a) What is the probability that a single workshop has at least one participant? What
+     is the probability that the workshop has at least one participant every Saturday for
+     five consecutive weeks?
+  b) Show that the expected number of participants per week is 2.05 and that the
+     standard deviation is 1.20.
+  c) Assuming the number of participants each week is independent, use the Central
+     Limit Theorem to estimate the probability that after 52 weeks, the company’s
+     ending capital is negative(i.e. their initial capital of NOK 50,000 has been spent).
+
+   The Central Limit Theorem for a sum
+  Let X1 , X2 , ..., Xn be a sequence of independent and identically distributed random
+  variables having a distribution with expectation E(X) = µX and finite variance
+  V ar(X) = σ 2 . Then the sum ni=1 Xi is approximately normally distributed with
+                                   P
+
+  expectation n · µ and variance n · σ 2 , i.e. N (n · µ, n · σ 2 ).
+
+Use the following pre-calculated values if needed:
+from scipy import stats
+print("i)",   stats.norm.cdf(-50000, loc = -10530, scale = 16874))
+print("ii)", stats.norm.cdf(-50000, loc = -567, scale = 19568))
+print("iii)", stats.norm.cdf(-50000, loc = -8240, scale = 17785))
+
+i) 0.009665088561003676
+ii) 0.005764923931026473
+iii) 0.009436092522358941
+  d) Sketch a Monte Carlo simulation routine (in pseudocode or Python-style code) to
+     estimate the probability in part (c).
+Problem 4
+An online retailer is experimenting with a personalized discount strategy. For every
+new visitor, a fair virtual coin is flipped, and if it shows heads, the visitor is shown a
+limited-time 10% off! banner for a specific product. The goal is to see whether offering
+a visible discount increases the likelihood of purchase.
+From a controlled sample of 1029 site visitors, the following purchasing data is recorded:
+
+                        Discount Banner: No          Discount Banner: Yes       Total
+Did Not Purchase        380                          342                        722
+Purchased               144                          163                        307
+Total                   524                          505                        1029
+
+
+                                             3
+  a) Suppose one of these customers is randomly selected. Are the following two events
+     independent? V: The visitor made a purchase, D: The visitor was shown the discount
+     banner.
+Doing a chi-squared test of independence based on the above contingency table in Python
+we get the following output:
+Chi-squared statistic: 2.83
+Degrees of freedom: 1
+P-value: 0.0927
+  b) Formulate the null- and alternative hypothesis for this test. What is your conclusion
+     based on the output?
+  c) What is the difference between the conclusion you draw in a) and the conclusion
+     you draw in b)?
+Below follows the Python output of a one-sided proportion z-test, where the alternative
+hypothesis is that the proportion of visitors that purchased in the discount banner
+population is higher than in the no discount banner population.
+Z-statistic: -1.6811
+One-sided P-value: 0.0464
+95% Confidence interval for difference in proportions: (-0.104, 0.008)
+  d) What is the additional benefit of the proportion test compared to the chi-squared
+     test? What practical implications can you draw from the output above?
+In a separate experiment for a different product, the retailer studied whether clicking a
+product recommendation is a good predictor of purchasing. They found:
+  • Only 3% of site visitors actually bought the product.
+
+  • 80% of those who bought the product clicked the recommendation.
+
+  • Just 10% of those who did not buy the product also clicked the recommendation.
+The marketing manager sees that most buyers clicked and very few non-buyers did —
+and concludes that clicking is a very strong signal of purchase intent.
+  e) Do you agree with the marketing manager? Support your answer with calculations.
+Problem 5
+A company called Watt’s Up Solar installs solar panels on roofs of private houses, and
+the company wants to simplify their pricing procedure. They distinguish between costs
+associated with all installations and costs that increase with the size of the installation,
+measured by the area (in m2 ) of solar panels being installed. The model is only intended
+for internal use, and the company adds a margin on top of the output from the model.
+For installation i, let xi denote the roof area covered by the installation (in m2 ), and yi
+denote the total costs (in NOK) of the installation. The data is presented in the figure
+below.
+
+
+
+
+                                             4
+                      250k
+
+
+
+
+   Total Cost (NOK)
+                      200k
+
+
+
+
+                      150k
+
+
+
+
+                      100k
+                             20                     40                    60                    80
+                                                                  2
+                                           Solar Panel Area (m )
+
+The company uses a linear regression model and the summary of the fitted model is
+presented in Appendix A.
+  a) Set up the equation for the model inserting the estimated coefficients. Give an
+     interpretation of the coefficients for this particular context.
+Diagnostic plots for the fitted model are presented in Appendix B.
+  b) What are the assumptions of a linear regression and are they fulfilled here?
+  c) A new customer has a gigantic roof. The customer wants to install 140 m2 of solar
+     panels. What will the internal cost of this project be? Comment on the prediction.
+ENOVA is a Norwegian state-owned enterprise that offers subsidies to private households
+willing to invest in improving energy efficiency of the house - including investing in
+solar panels. The support scheme for solar panel installations1 starts at 7500 NOK and
+increases with 1250 NOK per kilowatt installed effect. The installed effect of the solar
+panels the company uses is 0.275kilowatt-hour/m2 . The maximum total subsidy is 32,500
+NOK per household.
+  d) Set up an equation describing the relationship between the subsidy of an installation
+     i, si , and the size of the installation, xi . For what values of xi does the equation
+     hold?
+The government proposes introducing a “Norwegian price” for electricity, offering everyone
+a fixed price of 0.40 NOK per kilowatt-hour2 . Using this information and a few
+assumptions, we have implemented a Monte Carlo simulation to quantify the probability
+that the installation is profitable after 12 years. The output from the Monte Carlo
+simulation is presented in Appendix C.
+  e) Use the output in Appendix C to find a 80% prediction interval of the profits after
+     12 years. Approximate the probability of the installation being profitable after 12
+     years.
+
+
+
+  1
+    https://www.enova.no/privat/alle-energitiltak/solenergi/solcelleanlegg/.
+  2
+    https://www.regjeringen.no/no/aktuelt/norgespris-skal-sikre-forutsigbare-og-stabile-strompriser-for-
+folk/id3090849/.
+
+
+                                                   5
+Appendix A
+                             OLS Regression Results
+==============================================================================
+Dep. Variable:                        y    R-squared:                    0.957
+Model:                              OLS    Adj. R-squared:               0.957
+Method:                  Least Squares     F-statistic:                  2189.
+Date:                 Wed, 4 June 2025     Prob (F-statistic):        7.58e-69
+Time:                         09:00:00     Log-Likelihood:             -1052.2
+No. Observations:                   100    AIC:                          2108.
+Df Residuals:                        98    BIC:                          2114.
+Df Model:                             1
+Covariance Type:             nonrobust
+==============================================================================
+                  coef    std err            t       P>|t|     [0.025   0.975]
+------------------------------------------------------------------------------
+Intercept   9.752e+04    1917.747       50.853       0.000   9.37e+04 1.01e+05
+x           1937.8685      41.418       46.788      0.000    1855.675 2020.062
+==============================================================================
+Omnibus:                          0.900    Durbin-Watson:                2.285
+Prob(Omnibus):                    0.638    Jarque-Bera (JB):             0.808
+Skew:                             0.217    Prob(JB):                     0.668
+Kurtosis:                         2.929    Cond. No.                      97.9
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is
+    correctly specified.
+
+
+
+
+                                    6
+Appendix B
+
+
+
+
+                                                                              Fitted values vs residuals
+
+                    20000
+
+
+                    10000
+
+
+   Residuals                  0
+
+
+                    10000
+
+
+                    20000
+                                            120000   140000          160000             180000             200000          220000      240000
+                                                                                     Fitted values
+                                                                                   Probability Plot
+
+                    20000
+
+
+                    10000
+
+
+
+   Ordered Values
+                              0
+
+
+                    10000
+
+
+                    20000
+
+                                                 2               1                        0                            1               2
+                                                                                 Theoretical quantiles
+                                  1e 5                               Histogram of Residuals with Normal Curve
+
+
+                              4
+
+
+                              3
+
+                    Density
+                              2
+
+
+                              1
+
+
+                              0
+                                         20000           10000                       0                         10000                20000
+                                                                                         Residuals
+
+
+
+
+                                                                                         7
+Appendix C
+
+
+                1e 5
+            5
+
+            4
+
+            3
+  Density
+            2
+
+            1
+
+            0
+                   40000 30000 20000 10000 0             10000 20000
+                            Profits after 12 years (NOK)
+Percentiles of profits after 12 years
+0% percentile: -44227
+10% percentile: -20784
+20% percentile: -17177
+30% percentile: -14486
+40% percentile: -12368
+50% percentile: -10319
+60% percentile: -8223
+70% percentile: -6087
+80% percentile: -3498
+90% percentile: -33
+100% percentile: 18776
+
+
+
+
+                                            8
+Appendix D: Formulas
+
+Module 1: Visualizing and summarizing data
+
+  Summary statistics
+
+   • Mean
+                                                    1X n
+                                           x̄n =          xi
+                                                    n i=1
+   • Standard deviation              v
+                                             1    n
+                                     u
+                                   s=t               (xi − x̄n )2
+                                     u           X
+                                           n − 1 i=1
+   • Variance
+                                             1 X  n
+                                    s2 =             (xi − x̄n )2
+                                           n − 1 i=1
+   • Covariance
+                                         1    n
+                               sxy =             (xi − x̄n )(yi − ȳn )
+                                             X
+                                       n − 1 i=1
+   • Median: Middle observation.
+   • Mode: Most frequent observation.
+
+  Linear combination of variables
+
+ If Z = a · X + b · Y , then:
+    • Z =a·X +b·Y.
+    • SZ2 = a2 · SX
+                  2
+                     + b2 · SY2 + 2ab · SXY .
+
+
+Module 2: Probability, random variables, probability distributions and simu-
+lations.
+
+  Sample space
+
+ The sample space S is the set of all possible outcomes for an experiment. For
+ example, when throwing a dice, S = {1, 2, 3, 4, 5, 6}.
+
+  Kolmogorov’s axioms and probabilty rules
+
+   1. Range: The probabiltity P (A) of any event A satisfies 0 ≤ P (A) ≤ 1.
+   2. Something will happen: If S is the sample space, then P (S) = 1.
+   3. Union of disjoint events: If A1 , A2 , A3 , . . ., are pairwise disjoint events, then
+
+                  P (A1 ∪ A2 ∪ A3 ∪ . . .) = P (A1 ) + P (A2 ) + P (A3 ) + · · · .
+
+ From these we can derive
+   4. Complement rule: P (A) + P (Ac ) = 1
+   5. General rule of unions: P (A ∪ B) = P (A) + P (B) − P (A ∩ B).
+
+
+
+                                                9
+  6. Law of total probability:
+
+                    P (A) = P (A ∩ B1 ) + P (A ∩ B2 ) + · · · + P (A ∩ Bk ),
+
+     where B1 , . . . , Bk are disjoint events.
+
+ The law of conditional probability.
+
+                                                  P (A ∩ B)
+                                  P (A|B) =
+                                                    P (B)
+
+ Independence
+
+Two events, A and B, are independent if P (A ∩ B) = P (A) P (B).
+
+ Bayes law
+
+                                                               P (B)
+                               P (B|A) = P (A|B) ·                   .
+                                                               P (A)
+
+ Law of total probability + conditonal probability
+
+If we split the sample space into n disjoint B1 , . . . , Bn , then
+
+       P (A) = P (A|B1 ) · P (B1 ) + P (A|B2 ) · P (B2 ) + · · · + P (A|Bn ) · P (Bn ).
+
+ Discrete expectations
+
+Let X be a discrete random variable with probability distribution function p(x).
+The expectation of X, E(X) is calculated by
+
+                            µx = E(X) =
+                                                    X
+                                                                x · p(x).
+                                             all values of x
+
+For a general function, g, we have that
+
+                            E(g(x)) =
+                                              X
+                                                           g(x) · p(x).
+                                         all values of x
+
+
+
+ The variance shortcut
+The definition of the variance is
+
+                      Var(X) = E([X − µx ]2 ) =                (x − µx )2 p(x).
+                                                           X
+
+                                                           x
+
+Often it is quicker to use the “shortcut” formula:
+
+                                 Var(X) = E(X 2 ) − µ2x .
+
+
+
+                                               10
+ The Bernoulli distribution
+
+Let X be Bernoulli(p) distributed. Then X is a binary variable, with possible values
+of X being 0 or 1, and the probability distribution function of X is
+
+                 P (X = 1) = p,              P (X = 0) = 1 − p,           p ∈ (0, 1).
+
+We refer to p as the probability of success.
+
+ Probability density function (pdf)
+
+For continuous random variables, the probability density function (pdf), f (x), de-
+scribes the distribution. A pdf must fulfill that for all values of x, f (x) ≥ 0 and
+                                           Z ∞
+                                                 f (x)dx = 1.
+                                            −∞
+
+
+
+ Continuous cumulative probabilities
+
+Let X be a continuous random variable with pdf f (x), for x ∈ R. The cumulative
+distribution function, F (x) = P (X ≤ x), can be found by
+                                                            Z x
+                             F (x) = P (X ≤ x) =                   f (t) dt.
+                                                             −∞
+
+
+
+ Continuous expectations
+
+Let X be a continuous random variable with density function f (x), for x ∈ R. The
+expectation of X, E(X) is calculated by
+                                                 Z ∞
+                                   E(X) =               x · f (x) dx.
+                                                  −∞
+
+For a general function, g, we have that
+                                                 Z ∞
+                                E(g(x)) =               g(x) · f (x) dx.
+                                                  −∞
+
+
+
+ Joint vs marginal probability distributions
+
+A marginal distribution function is for one random variable, as we have seen so
+far. The joint distribution function gives the probability of any outcome of two or
+more random variables. Let X and Y be discrete random variables. Their joint
+distribution function is pxy (x, y) = P (X = x ∩ Y = y). If X and Y are independent,
+pxy (x, y) = px (x)py (y).
+Given the joint distribution function, we can find the marginal distribution functions
+using the law of total probability:
+
+            px (x) =                     pxy (x, y),    py (y) =                     pxy (x, y).
+                            X                                           X
+
+                       all values of y                             all values of x
+
+
+
+
+                                                       11
+ Similarly, if X and Y are continuous, their marginal density functions can be found
+ by integrating their joint density function
+                    Z                                              Z
+         fx (x) =                      fxy (x, y)dy,    fy (y) =                     fxy (x, y)dx.
+                     all values of y                               all values of x
+
+ Again, if X and Y are independent, fxy (x, y) = fx (x)fy (y).
+ Depending on X and Y being discrete or continuous, we can find
+                                                                       Z Z
+        E(XY ) =                xy pxy (x, y) or E(XY ) =                      xy fxy (x, y) dx dy.
+                     XX
+
+                        x   y                                          x   y
+
+
+
+  Covariance and correlation
+ Let X and Y be two random variables. The covariance between X and Y is a measure
+ of the linear dependence between X and Y, and is defined by
+
+        Cov(X, Y ) = E[(X − E(X))(Y − E(Y ))] = E(X Y ) − E(X) E(Y ).
+
+ If X and Y are independent, Cov(X, Y ) = 0. If X and Y are normally distributed,
+ Cov(X, Y ) = 0 also implies that X and Y are independent.
+ Since the covariance can be a bit difficult to interpret, we often use correlation
+ for measuring the linear relationship between X and Y. The correlation, ρ, is a
+ standardization of covariance and is a number in [−1, 1], defined by
+                                               Cov(X, Y )
+                                       ρxy = q              .
+                                              Var(X)Var(Y )
+
+ Some rules relating to covariances:
+
+                    Cov(X, a) = 0,
+                   Cov(X, X) = Var(X),
+           Cov(aX + b, cY + d) = acCov(X, Y ),
+                Cov(X, Y + Z) = Cov(X, Y ) + Cov(X, Z),
+                    Var(aX + bY ) = a2 Var(X) + b2 Var(Y ) + 2abCov(X, Y ),
+
+ where X,Y,Z are random variables and a,b,c,d are constants.
+
+
+Module 3: Estimation, sampling distributions and resampling
+
+  Population and sample
+
+ A population is a collection of all items of interest to our study. The numbers
+ we obtain from the population is called parameters. A sample is a subset of the
+ population. The numbers obtained from the sample are called statistics.
+
+
+
+
+                                                       12
+ Estimator
+An estimator is a function of the sample that provides an estimate of the unknown
+parameter. An estimator is a statistic since we use the sample to compute it.
+
+ Unbiased and consistent estimators
+
+Let θ̂n be an estimator of the parameter θ0 . An estimator is unbiased if E(θ̂n ) = θ0 .
+An estimator is consistent if
+
+                  limn→∞ E(θ̂n ) = θ0    and limn→∞ V ar(θ̂n ) = 0
+
+ Sampling distribution
+
+The sampling distribution is the distribution of our statistic/estimator across
+samples.
+
+ The Central Limit Theorem
+Let X1 , X2 , ..., Xn be a sequence of independent and identically distributed random
+variables having a distribution with expectation E(X) = µX and finite variance
+V ar(X) = σ 2 . Then
+
+                           1X n
+                                                          σ2
+                      X̄ =       Xi is approximately N (µ, ).
+                           n i=1                          n
+Thus, for a sufficiently large sample size n, X̄ is approximately normally distributed
+                               2
+with mean µ and variance σn .
+
+
+ The Central Limit Theorem for a sum
+Let X1 , X2 , ..., Xn be a sequence of independent and identically distributed random
+variables having a distribution with expectation E(X) = µX and finite variance
+V ar(X) = σ 2 . Then the sum ni=1 Xi is approximately normally distributed with
+                                 P
+
+expectation n · µ and variance n · σ 2 , i.e. N (n · µ, n · σ 2 ).
+
+ Discrete expectations
+
+Let X be a discrete random variable with probability distribution function p(x).
+The expectation of X, E(X) is calculated by
+
+                          µx = E(X) =
+                                                 X
+                                                            x · p(x).
+                                          all values of x
+
+For a general function, g, we have that
+
+                          E(g(x)) =
+                                           X
+                                                        g(x) · p(x).
+                                      all values of x
+
+
+
+
+                                            13
+  Expectation and variance rules
+
+ Let X1 , X2 , . . . , Xn be random variables. For constants, a and b,
+
+            E(a + b X1 ) = a + b E(X1 ),     and Var(a + b X1 ) = b2 Var(X1 ).
+
+ We also have that
+
+               E(X1 + X2 + · · · + Xn ) = E(X1 ) + E(X2 ) + · · · + E(Xn ).
+
+ If X1 , X2 , . . . , Xn are independent,
+
+           Var(X1 + X2 + · · · + Xn ) = Var(X1 ) + Var(X2 ) + · · · + Var(Xn ).
+
+  The variance shortcut
+ The definition of the variance is
+
+                       Var(X) = E([X − µx ]2 ) =         (x − µx )2 p(x).
+                                                    X
+
+                                                     x
+
+ Often it is quicker to use the “shortcut” formula:
+
+                                   Var(X) = E(X 2 ) − µ2x .
+
+
+Module 4: Designing studies, hypothesis testing, and quantifying effects
+
+  Hypothesis testing’s six steps
+
+   1. Formulate a hypothesis of interest
+   2. Specify the null and alternative hypotheses
+   3. Collect some data
+   4. Fit a model to the data and compute a test statistic
+   5. Determine the probability of the observed result under the null hypothesis
+   6. Assess the “statistical significance” of the result
+
+  Type I/II errors and the significance level
+
+ Type I error is rejecting the null hypothesis when it is true. Type II error is failing
+ to reject the null, when it is false. The significance level of a hypothesis test is the
+ probability of making a Type I error.
+
+  Confidence interval: The theoretical approach
+
+                  CI = point estimate ± critical value × standard error
+ If the data is normally distributed, and we want a (1 − α)100% confidence interval,
+ the interval can be found using the formula
+                                                      s
+                               CI : x ± t1−α/2,n−1 × √ ,
+                                                       n
+
+
+                                              14
+ where t1−α/2,n−1 is a critical value in a t-distribution with n − 1 degrees of freedom,
+ fulfilling P (T ≤ t1−α/2,n−1 ) = 1 − α. For n = 30 and α = 0.05 (95% CI) the critical
+ value can be found in Python by:
+ from scipy import stats
+ alpha = 0.05
+ n=30
+ print(stats.t.ppf(q=1-alpha/2, df=n-1))
+ 2.045229642132703
+
+  Cohen’s d
+ Cohen’s d is an effect size and can be calculated as
+                                             mean difference
+                            Cohen’s d =                       .
+                                           standard deviation
+
+Module 5: Measuring relationships and fitting models
+
+  Pearson chi-squared test for discrete distributions
+
+ We have a null hypothesis formulated as a discrete probability distribution p1 , . . . , pk
+ of observing possible outcomes u1 , . . . , uk . When we observe n outcomes from this
+ distribution, we would expect ei = pi · n observations of outcome ui . If we have
+ observed n outcomes from the distribution, and outcome ui has occurred fi times, we
+ then wonder whether the observed frequencies (fi ) differ so much from the expected
+ frequencies (ei ) that we no longer believe that p1 , . . . , pk is the true probability
+ distribution.
+ The test statistic is given by:
+                                           k
+                                             (fi − ei )2
+                                    χ2 =
+                                           X
+                                                           ,
+                                           i=1        ei
+ which follows a χ2 -distribution with k − 1 degrees of freedom if the null hypothesis
+ is true.
+
+  Independent events (revisited)
+
+ For two events A and B with positive probability of occurring, the following three
+ statements are equivalent:
+
+                                P (A ∩ B) = P (A) · P (B)
+
+                                    P (A | B) = P (A)
+
+                                    P (B | A) = P (B)
+
+
+
+
+                                                 15
+ Chi-squared test for independence
+
+Assume we have n observations that can be characterized by two categorical variables,
+A and B. Assume that variable A can be classified into r categories a1 , a2 , ..., ar ,
+and variable B can be classified into s categories b1 , b2 , ..., bs . We organize the
+observations in a contingency table, where each cell is the observed frequencies of
+observation having a = ai and b = bj , denoted by fij :
+
+              b1             b2                ···             bs           Sum
+ a1            f11            f12              ···              f1s          f1·
+ a2            f21            f22              ···              f2s          f2·
+..            ..             ..                ..              ..           ..
+ .             .              .                   .             .            .
+ar            fr1            fr2               ···             frs          fr·
+Sum           f·1            f·2               ···             f·s          n
+
+Under the null hypothesis of A and B being independent, the expected frequency
+in each cell is given by:
+                                           fi· · f·j
+                                          eij =
+                                               n
+We then wonder whether the observed frequencies (fij ) differ so much from the
+expected frequencies (eij ) that we no longer believe that A and B are independent.
+The test statistic is:
+                                          r X
+                                            s
+                                              (fij − eij )2
+                                   χ2 =
+                                          X
+                                                                    ,
+                                          i=1 j=1        eij
+which approximately follows a χ2 -distribution with (r − 1)(s − 1) degrees of freedom,
+provided the expected frequencies are large enough (typically at least 5 in each cell).
+A large value of χ2 indicates a greater discrepancy between observed and expected
+frequencies and thus provides evidence against the null hypothesis of indepen-
+dence.
+
+ Two-Proportion Z-Test
+
+We are testing whether there is a difference in the proportion of successes between
+two independent groups. Let p1 be population proportion in Group 1 and p2 be
+population proportion in Group 2. In a one-sided test or directional test we are
+testing:
+                          H0 : p1 = p2      HA : p1 > p2
+while for a two sided test we are testing
+                            H0 : p1 = p2       vs. Ha : p1 ̸= p2
+Let p̂1 and p̂2 be the sample proportions of success in group 1 and 2, respectively,
+and let ppool be the total proportion. The test statistic is given as:
+
+                                                                           1   1
+                                                    s
+                p̂1 − p̂2
+                                                                                  
+             Z=              where SE =                 ppool (1 − ppool )   +
+                   SE                                                      n1 n2
+
+
+                                                  16
+Under the null hypothesis H0 , the test statistic Z approximately follows a standard
+normal distribution: Z ∼ N (0, 1)
+
+ Covariance and correlation
+
+Let X and Y be random variables with µx = E(X) and µY = E(Y ), then
+                             h                  i
+             Cov(X, Y ) = E (X − µx )(Y − µy ) = E(X · Y ) − µx µy .
+
+The correlation is
+                                       Cov(X, Y )
+                                 ρ=
+                                      SD(X)SD(Y )
+
+
+
+
+                                         17
+
