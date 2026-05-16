@@ -2646,6 +2646,441 @@
             border-top: 1px solid #e5e7eb;
             font-style: italic;
         }
+
+        /* ─── Exam relevance, home dashboard, mock exam ─────────────────── */
+        .exam-relevance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 8px 0 6px;
+            border: 1.5px solid;
+            line-height: 1.2;
+        }
+        .exam-relevance-badge.critical {
+            background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        .exam-relevance-badge.important {
+            background: #f0f9ff;
+            border-color: #38bdf8;
+            color: #075985;
+        }
+        .erb-divider {
+            display: inline-block;
+            width: 1px;
+            height: 14px;
+            background: currentColor;
+            opacity: 0.35;
+            margin: 0 4px;
+            vertical-align: middle;
+        }
+        .erb-topic-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.55);
+            color: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .erb-link-label {
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.75;
+            margin-right: 4px;
+        }
+        .erb-link-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: white;
+            color: #1e3a8a;
+            border: 1px solid rgba(30, 58, 138, 0.25);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 4px;
+            transition: background 0.15s;
+        }
+        .erb-link-pill:hover { background: #e0e7ff; }
+
+        /* Past-question mini badges (used in home/dashboard exam column and outline) */
+        .past-q-mini {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 4px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .past-q-mini:hover { background: #eef2ff; border-color: #818cf8; color: #1e3a8a; }
+        .past-q-mini.touched {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #22c55e;
+        }
+        .home-row-pastqs {
+            width: 100%;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        /* Past exam questions page rows */
+        .home-row.past-q-row {
+            cursor: pointer;
+            border-radius: 6px;
+            padding-left: 8px;
+            padding-right: 8px;
+            transition: background 0.15s;
+        }
+        .home-row.past-q-row:hover { background: #eef2ff; }
+        .home-row.past-q-row.linked { background: #ecfdf5; }
+        .home-row.past-q-row.linked:hover { background: #d1fae5; }
+
+        /* Outline → linked questions row */
+        .outline-topic-linked {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        /* Mock-exam call-to-action card */
+        .mock-cta-card {
+            background: linear-gradient(135deg, #eef2ff 0%, #fef3c7 100%);
+            border: 1px solid #fbbf24;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 14px;
+        }
+        .mock-cta-body {
+            padding-top: 6px;
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        /* Past-question modal sections */
+        .past-q-meta { display: flex; gap: 6px; margin-bottom: 14px; }
+        .past-q-section {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            border-left: 3px solid #667eea;
+        }
+        .past-q-section-label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        .past-q-section-body { color: #1f2937; font-size: 14px; line-height: 1.5; }
+        .past-q-solution {
+            background: #fffbeb;
+            border-radius: 8px;
+            padding: 12px 14px;
+            border-left: 3px solid #f59e0b;
+        }
+        .past-q-solution summary {
+            cursor: pointer;
+            font-weight: 700;
+            color: #92400e;
+            font-size: 13px;
+        }
+        .past-q-solution[open] summary { margin-bottom: 10px; }
+
+        .home-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .home-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            width: 100%;
+        }
+        .home-status {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .home-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 16px;
+        }
+        .home-col {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+        .home-col-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 12px;
+        }
+        .home-col-header h3 {
+            margin: 0;
+            font-size: 15px;
+            color: #1a1a1a;
+        }
+        .home-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f9fafb;
+        }
+        .home-row:last-child { border-bottom: none; }
+        .home-row-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .home-row-meta {
+            font-size: 12px;
+            color: #6b7280;
+            white-space: nowrap;
+        }
+        .home-row-score {
+            font-weight: 700;
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            min-width: 56px;
+            text-align: center;
+        }
+        .home-row.exam-row.uncovered { background: #fef2f2; border-radius: 6px; padding-left: 8px; padding-right: 8px; }
+        .home-row.exam-row.noted { background: #fffbeb; border-radius: 6px; padding-left: 8px; padding-right: 8px; }
+
+        .freq-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+        .freq-pill.freq-veryhigh { background: #fee2e2; color: #991b1b; }
+        .freq-pill.freq-high     { background: #ffedd5; color: #9a3412; }
+        .freq-pill.freq-medium   { background: #fef3c7; color: #92400e; }
+        .freq-pill.freq-low      { background: #f3f4f6; color: #4b5563; }
+        .freq-pill.freq-critical { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        .freq-pill.freq-code     { background: #dbeafe; color: #1e40af; }
+
+        .importance-progress {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            border: 1px solid #e5e7eb;
+            z-index: 1000;
+            min-width: 260px;
+        }
+        .ip-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+        .ip-bar { height: 6px; background: #f3f4f6; border-radius: 999px; overflow: hidden; }
+        .ip-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+        .ip-stats { font-size: 11px; color: #6b7280; margin-top: 6px; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+        .editable-target {
+            cursor: pointer;
+            border-bottom: 1.5px dashed rgba(102, 126, 234, 0.45);
+            padding: 0 2px;
+            border-radius: 3px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .editable-target:hover {
+            background: rgba(102, 126, 234, 0.12);
+            border-bottom-color: #667eea;
+        }
+
+        .outline-section {
+            margin-bottom: 24px;
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            border: 1px solid #e5e7eb;
+        }
+        .outline-section h3 { margin-top: 0; }
+        .outline-slot {
+            padding: 12px;
+            border-left: 3px solid #667eea;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .outline-slot-title { font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+        .outline-slot-typical { color: #4b5563; font-size: 14px; margin-bottom: 6px; }
+        .outline-slot-skills, .outline-topic-skills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .skill-pill {
+            display: inline-block;
+            background: #eef2ff;
+            color: #4338ca;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .outline-topic {
+            padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .outline-topic:last-child { border-bottom: none; }
+        .outline-topic-head {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .outline-topic-example {
+            color: #6b7280;
+            font-style: italic;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+        .outline-python {
+            background: #eff6ff;
+            border-left: 3px solid #3b82f6;
+            padding: 10px 14px;
+            border-radius: 6px;
+            color: #1e3a8a;
+        }
+        .keyword-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        /* Mock exam modal */
+        .mock-exam-modal { z-index: 2000; }
+        .mock-exam-modal .modal-content.mock-exam-content {
+            width: min(1100px, 95vw);
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+        .mock-exam-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 16px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        .mock-timer {
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            color: #1f2937;
+        }
+        .mock-timer.warn { background: #fee2e2; color: #991b1b; }
+        .mock-total {
+            font-size: 18px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 6px;
+        }
+        .mock-problem {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .mock-problem-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+        .mock-problem-header h3 { margin: 0; }
+        .mock-points { font-size: 13px; font-weight: 600; color: #6b7280; }
+        .mock-story {
+            background: white;
+            border-radius: 6px;
+            padding: 12px 14px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 14px;
+            color: #1f2937;
+            font-size: 14px;
+        }
+        .mock-part {
+            margin-bottom: 16px;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .mock-part:last-child { border-bottom: none; }
+        .mock-part-prompt { font-size: 14px; color: #1f2937; margin-bottom: 6px; }
+        .mock-part-meta { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
+        .mock-answer { min-height: 100px; width: 100%; }
+        .mock-grade-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .mock-answer-details {
+            background: white;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-top: 6px;
+        }
+        .mock-answer-details summary { cursor: pointer; font-weight: 600; color: #6b7280; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -2659,13 +3094,9 @@
             </div>
 
             <div class="upload-section">
-                <button class="upload-btn" id="uploadBtn">
-                    <span>+</span>
-                    <span>Upload Resource</span>
-                </button>
-                <button class="all-notes-btn" onclick="showAllNotesPage()">
-                    <span>All Notes &amp; Flash Cards</span>
-                </button>
+                <button class="upload-btn home-btn" onclick="renderHomeDashboard()">Dashboard</button>
+                <button class="upload-btn" id="uploadBtn">Upload Resource</button>
+                <button class="all-notes-btn" onclick="showAllNotesPage()">All Notes &amp; Flash Cards</button>
             </div>
 
             <div class="resources-list" id="resourcesList">
@@ -2730,7 +3161,7 @@
                         <div class="daily-goal-metric">
                             <div class="daily-goal-metric-label">Questions</div>
                             <div class="daily-goal-metric-value">
-                                <span id="dailyAnsweredCount">0</span><span class="daily-goal-target"> / <span id="dailyTargetCount">20</span></span>
+                                <span id="dailyAnsweredCount">0</span><span class="daily-goal-target"> / <span id="dailyTargetCount" class="editable-target" onclick="editDailyTarget('questions')" title="Click to edit">20</span></span>
                             </div>
                             <div class="daily-goal-bar">
                                 <div class="daily-goal-bar-fill" id="dailyQuestionsBar" style="width: 0%"></div>
@@ -2739,7 +3170,7 @@
                         <div class="daily-goal-metric">
                             <div class="daily-goal-metric-label">Avg score today</div>
                             <div class="daily-goal-metric-value">
-                                <span id="dailyAvgScore">—</span><span class="daily-goal-target"> / <span id="dailyTargetScore">6</span></span>
+                                <span id="dailyAvgScore">—</span><span class="daily-goal-target"> / <span id="dailyTargetScore" class="editable-target" onclick="editDailyTarget('score')" title="Click to edit">6</span></span>
                             </div>
                             <div class="daily-goal-bar">
                                 <div class="daily-goal-bar-fill" id="dailyScoreBar" style="width: 0%"></div>
@@ -2864,6 +3295,13 @@
         let timerInterval = null;
         let questionSource = 'slides'; // 'slides' | 'notes' | 'exercises' | 'exams'
 
+        // Exam intelligence layer — populated from past exams + AI analysis.
+        // Drives the home dashboard, exam outline, mock exam, and the per-item
+        // importance assessment.
+        let examMeta = null; // { topics, outline, criticalKeywords, pythonExpectations, version, generatedAt, mockExamHistory? }
+        let importanceProgress = null; // { current, total } while backfill is running
+        let mockExamSession = null;    // active mock-exam attempt (in-memory only)
+
         // ─── TECH3 exam style guide ────────────────────────────────────────
         // Distilled from the V25 main, retake, and trial exams. Injected
         // into every question-generation prompt so generated practice
@@ -2940,6 +3378,7 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 resources: stripped,
                 topics,
                 notes,
+                examMeta,
                 progressData: {
                     ...progressData,
                     conceptsMastered: Array.from(progressData.conceptsMastered || [])
@@ -3037,6 +3476,7 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
             if (Array.isArray(cloud.resources)) resources = cloud.resources;
             if (cloud.topics && typeof cloud.topics === 'object') topics = cloud.topics;
             if (Array.isArray(cloud.notes)) notes = cloud.notes;
+            if (cloud.examMeta && typeof cloud.examMeta === 'object') examMeta = cloud.examMeta;
             if (cloud.progressData) {
                 progressData = cloud.progressData;
                 progressData.conceptsMastered = new Set(progressData.conceptsMastered || []);
@@ -3234,6 +3674,7 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 resources    = appData.resources    || [];
                 topics       = appData.topics       || {};
                 notes        = appData.notes        || [];
+                examMeta     = appData.examMeta     || null;
                 progressData = appData.progressData || progressData;
                 progressData.conceptsMastered = new Set(progressData.conceptsMastered || []);
             }
@@ -3480,13 +3921,13 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 window.currentExtractedContent = extractedContent;
                 
                 const textSize = (extractedContent.fullText.length / 1024).toFixed(1);
-                document.getElementById('fileName').textContent = `${file.name} ✓`;
-                info.textContent = `✓ ${file.name} • ${extractedContent.numPages} pages • ${textSize}KB extracted`;
+                document.getElementById('fileName').textContent = `${file.name} — ready`;
+                info.textContent = `${file.name} • ${extractedContent.numPages} pages • ${textSize}KB extracted`;
                 
             } catch (error) {
                 console.error('Error processing file:', error);
                 document.getElementById('fileName').textContent = `${file.name} (Failed)`;
-                info.textContent = '✗ Failed to process file';
+                info.textContent = 'Failed to process file';
                 viewer.style.display = 'none';
                 window.currentExtractedContent = null;
             }
@@ -3569,11 +4010,11 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 document.getElementById('resourceTitle').value = title;
                 
                 const textSize = (allText.length / 1024).toFixed(1);
-                info.textContent = `✓ ${fileName} • ${numPages} pages • ${textSize}KB extracted`;
+                info.textContent = `${fileName} • ${numPages} pages • ${textSize}KB extracted`;
                 
             } catch (error) {
                 console.error('Error loading PDF:', error);
-                info.textContent = '✗ Failed to load PDF';
+                info.textContent = 'Failed to load PDF';
                 viewer.style.display = 'none';
                 window.currentExtractedContent = null;
             }
@@ -3663,7 +4104,7 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 window.currentExtractedContent = extractedContent;
                 
                 const textSize = (extractedContent.fullText.length / 1024).toFixed(1);
-                document.getElementById('fileName').textContent = `${file.name} ✓ ${textSize}KB extracted`;
+                document.getElementById('fileName').textContent = `${file.name} — ${textSize}KB extracted`;
                 
             } catch (error) {
                 console.error('Error extracting content:', error);
@@ -3800,7 +4241,7 @@ Title:`
 
                 // Store extracted content
                 window.currentExtractedContent = extractedContent;
-                document.getElementById('fileName').textContent = `${file.name} ✓ Content extracted`;
+                document.getElementById('fileName').textContent = `${file.name} — content extracted`;
                 
             } catch (error) {
                 console.error('Error extracting content:', error);
@@ -4064,7 +4505,7 @@ Title:`
                 <div class="modal-content" style="max-width: 780px;">
                     <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
                         <span>Add Python Code Block</span>
-                        <span style="font-size:11px; color:#9ca3af; font-weight:500;">Tab indents · ⌘/Ctrl-Enter to insert</span>
+                        <span style="font-size:11px; color:#9ca3af; font-weight:500;">Tab indents · Cmd/Ctrl-Enter to insert</span>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Python code (gets a ▶ Run button after you save the note)</label>
@@ -4894,15 +5335,9 @@ Title:`
             if (currentResource) {
                 renderResourceContent();
             } else {
-                // Show empty state
-                document.getElementById('contentHeader').innerHTML = '';
-                document.getElementById('contentBody').innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-text">No resources yet. Upload a resource to get started!</div>
-                    </div>
-                `;
+                renderHomeDashboard();
             }
-            
+
             updateProgressStats();
         }
 
@@ -4923,7 +5358,7 @@ Title:`
                         </div>
                     </div>
                     <button class="btn-code" id="editTitleBtn" style="white-space: nowrap;">
-                        ✏️ Edit Title
+                        Edit Title
                     </button>
                 </div>
             `;
@@ -4982,7 +5417,7 @@ Title:`
                                 </div>
                                 <div class="pdf-controls">
                                     <button onclick="window.open('${pdfSrc.replace(/'/g, "\\'")}', '_blank')" class="btn-pdf-action" title="Open in new tab">
-                                        📄 Open in New Tab
+                                        Open in new tab
                                     </button>
                                 </div>
                             </div>
@@ -5012,11 +5447,11 @@ Title:`
                                     ${hasContent ? `• ${contentSize} of text extracted` : ''}
                                 </div>
                                 <div style="font-size: 13px; color: #10b981; font-weight: 600; margin-bottom: 16px;">
-                                    ${hasContent ? '✓ Full content available for questions' : ''}
+                                    ${hasContent ? 'Full content available for questions' : ''}
                                 </div>
                                 ${currentResource.pdfBlobUrl ? `
                                     <div style="padding: 16px; background: white; border-radius: 8px; border: 2px dashed #e5e7eb; margin-bottom: 16px;">
-                                        <p style="color: #f59e0b; font-weight: 600; margin-bottom: 8px;">⚠️ PDF Display Unavailable</p>
+                                        <p style="color: #f59e0b; font-weight: 600; margin-bottom: 8px;">PDF display unavailable</p>
                                         <p style="color: #6b7280; margin-bottom: 12px; font-size: 13px;">
                                             This PDF was uploaded before display support was added.<br>
                                             Questions still work! To view slides, please delete and re-upload.
@@ -5849,7 +6284,7 @@ ${modeInstruction}`
                 return `<span class="coverage-chip coverage-empty" title="Not yet generated">${label}</span>`;
             }
             if (slot.bestRating !== null && slot.bestRating >= 8) {
-                return `<span class="coverage-chip coverage-mastered" title="Mastered (${slot.bestRating}/10) — ${slot.answered} answered">${label} ✓</span>`;
+                return `<span class="coverage-chip coverage-mastered" title="Mastered (${slot.bestRating}/10) — ${slot.answered} answered">${label} (mastered)</span>`;
             }
             if (slot.answered > 0) {
                 const gaps = slot.weakAreas && slot.weakAreas.length > 0
@@ -6046,17 +6481,28 @@ Return ONLY JSON (no markdown):
 
             if (!currentResource.studyNotes) currentResource.studyNotes = [];
             const parsed = parseNoteStructure(content);
-            currentResource.studyNotes.push({
+            const note = {
                 id: Date.now(),
                 topic: parsed.topic || 'Untitled',
                 body: parsed.body || content,
                 raw: content,
                 timestamp: new Date().toISOString()
-            });
+            };
+            currentResource.studyNotes.push(note);
 
             textarea.value = '';
             saveData();
             renderResourceContent();
+
+            // Assess exam relevance in the background so the badge appears
+            // shortly after the note shows up.
+            if (examMeta) {
+                assessSingleItem(note, 'note').then(() => {
+                    if (currentResource && (currentResource.studyNotes || []).includes(note)) {
+                        renderResourceContent();
+                    }
+                });
+            }
         }
 
         // Delete a study note
@@ -6216,17 +6662,26 @@ Return ONLY JSON (no markdown):
 
             if (!currentResource.exercises) currentResource.exercises = [];
             const parsed = parseNoteStructure(content);
-            currentResource.exercises.push({
+            const ex = {
                 id: Date.now(),
                 topic: parsed.topic || 'Exercise',
                 body: parsed.body || content,
                 raw: content,
                 attempts: [],
                 timestamp: new Date().toISOString()
-            });
+            };
+            currentResource.exercises.push(ex);
             textarea.value = '';
             saveData();
             renderResourceContent();
+
+            if (examMeta) {
+                assessSingleItem(ex, 'exercise').then(() => {
+                    if (currentResource && (currentResource.exercises || []).includes(ex)) {
+                        renderResourceContent();
+                    }
+                });
+            }
         }
 
         function deleteExercise(exId) {
@@ -6539,6 +6994,7 @@ Return ONLY JSON (no markdown):
                                 <button class="btn-delete-question" onclick="deleteExercise(${ex.id})" title="Delete exercise">x</button>
                             </div>
                         </div>
+                        ${renderImportanceBadge(ex)}
                         <div class="study-note-body">${renderTextWithImages(ex.body || '')}</div>
                         ${attemptsHtml}
                         ${renderContentThread('exercise', ex.id, ex.thread)}
@@ -6703,20 +7159,59 @@ Return ONLY JSON (no markdown fences):
                     if (q.source === 'exam') allExamQs.push({ ...q, _examTitle: er.title });
                 }
             }
-            if (allExamQs.length === 0) {
-                return `
-                    <div class="empty-state">
-                        <div class="empty-state-text">No past exam questions yet. Upload a Past Exam resource (Resource Type → Past Exam) and the questions will be parsed automatically.</div>
+
+            // Mock-exam history (kept on examMeta, not on a single resource)
+            const history = (examMeta && examMeta.mockExamHistory) || [];
+            let historyHtml = '';
+            if (history.length > 0) {
+                historyHtml = `
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <div class="topic-group-title">Your mock exam history</div>
+                        </div>
+                        ${history.slice().reverse().map(h => {
+                            const pct = h.totalPoints > 0 ? (h.totalEarned / h.totalPoints * 100).toFixed(0) : 0;
+                            const rc = pct >= 80 ? 'good' : pct >= 60 ? 'fair' : 'weak';
+                            return `
+                                <div class="home-row">
+                                    <div class="home-row-name">${escapeHtml(h.title)}</div>
+                                    <div class="home-row-meta">${new Date(h.takenAt).toLocaleString()}</div>
+                                    <div class="home-row-score rating-${rc}">${h.totalEarned}/${h.totalPoints} (${pct}%)</div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }
+
+            // Always-visible Generate Mock Exam call to action
+            const mockExamCta = `
+                <div class="mock-cta-card">
+                    <div class="topic-group-header">
+                        <div class="topic-group-title">Generate a fresh mock exam</div>
+                        <button class="btn-primary" onclick="openMockExamSetup()">Start mock exam</button>
+                    </div>
+                    <div class="mock-cta-body">
+                        Produces a 5-problem TECH3-style exam in Python format, modeled on the recurring patterns in past exams. Timed sit, then AI-graded with per-part feedback.
+                    </div>
+                </div>
+            `;
+
+            if (allExamQs.length === 0) {
+                return mockExamCta + historyHtml + `
+                    <div class="empty-state">
+                        <div class="empty-state-text">No past exam questions parsed yet. Upload a Past Exam resource (Resource Type → Past Exam) and the questions will be available alongside the mock exam.</div>
+                    </div>
+                `;
+            }
+
             const byExam = {};
             for (const q of allExamQs) {
                 const k = q._examTitle || 'Exam';
                 if (!byExam[k]) byExam[k] = [];
                 byExam[k].push(q);
             }
-            let html = '';
+            let html = mockExamCta + historyHtml;
             let globalNum = 0;
             for (const [examTitle, qs] of Object.entries(byExam)) {
                 html += `<div class="topic-group">
@@ -6883,6 +7378,7 @@ Return ONLY JSON (no markdown fences):
                                 <button class="btn-delete-question" onclick="deleteStudyNote(${note.id})" title="Delete note">x</button>
                             </div>
                         </div>
+                        ${renderImportanceBadge(note)}
                         <div class="study-note-body">${renderNoteBodyWithCode(note.id, note.body || '')}</div>
                         ${renderContentThread('note', note.id, note.thread)}
                         ${renderContentAskBar('note', note.id)}
@@ -8088,12 +8584,1608 @@ Return ONLY JSON (no markdown):
             if (viewMode === 'allNotes') renderAllNotesPage();
         }
 
+        // ───────────────────────────────────────────────────────────────────
+        // Exam intelligence: taxonomy extraction, importance assessment,
+        // home dashboard, exam outline, mock exam. Driven by /api/proxy
+        // (Claude) and the past exam .txt files in /Exams/.
+        // ───────────────────────────────────────────────────────────────────
+
+        const EXAM_TAXONOMY_VERSION = 4;
+
+        // VERIFICATION FLAG — keep false until you've confirmed one full
+        // extraction run on the (smallest) trial exam produces sensible
+        // examMeta.exams[0]. Then flip to true and force a rebuild by either:
+        //   (a) opening DevTools and running: examMeta = null; await extractExamTaxonomy(true);
+        //   (b) bumping EXAM_TAXONOMY_VERSION below (e.g. to 5)
+        const EXTRACT_ALL_EXAMS = false;
+
+        // Each exam has up to 4 source paths (PDF + TXT for paper and solution).
+        // We prefer PDFs because vision-aware extraction captures figures,
+        // tables, scatter plots, OLS output etc. — content that's lost in
+        // .txt extraction. TXT is kept as a fallback when the PDF is missing
+        // or rendering fails.
+        const ALL_EXAM_SOURCES = [
+            {
+                id: 'v25-main', label: 'V25 Main (June 2025)',
+                paperPdf: 'Exams/TECH3-V25.pdf',           paperTxt: 'Exams/TECH3-V25.txt',
+                solPdf:   'Exams/TECH3-V25-sol.pdf',        solTxt:   'Exams/TECH3-V25-sol.txt'
+            },
+            {
+                id: 'v25-retake', label: 'V25 Retake (Aug 2025)',
+                paperPdf: 'Exams/TECH3-V25-retake.pdf',    paperTxt: 'Exams/TECH3-V25-retake.txt',
+                solPdf:   'Exams/TECH3-V25-retake-sol.pdf', solTxt:   'Exams/TECH3-V25-retake-sol.txt'
+            },
+            {
+                id: 'v25-trial', label: 'V25 Trial',
+                paperPdf: 'Exams/TECH3-V25-trialexam.pdf',     paperTxt: null,
+                solPdf:   'Exams/TECH3-V25-trialexam-sol.pdf', solTxt:   'Exams/TECH3-V25-trialexam-sol.txt'
+            }
+        ];
+        const EXAM_SOURCES = EXTRACT_ALL_EXAMS
+            ? ALL_EXAM_SOURCES
+            : ALL_EXAM_SOURCES.filter(s => s.id === 'v25-trial');
+
+        // Race a promise against a timeout. The losing operation is NOT
+        // cancelled — pdf.js / fetch continue in the background until the
+        // tab discards them — but our pipeline moves on so a hung PDF
+        // doesn't lock the whole extraction.
+        function withTimeout(promise, ms, label) {
+            let timer;
+            const timeoutP = new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(`Timeout after ${ms}ms: ${label}`)), ms);
+            });
+            return Promise.race([promise, timeoutP]).finally(() => clearTimeout(timer));
+        }
+
+        // Progress state for the multi-stage PDF extraction, surfaced on the
+        // home dashboard so the user can see what's happening during the first
+        // ~60-90 second build.
+        let extractionProgress = null; // { message, current, total }
+        function setExtractionProgress(message, current, total) {
+            extractionProgress = { message, current, total };
+            if (viewMode === 'home') renderHomeDashboard();
+        }
+        function clearExtractionProgress() {
+            extractionProgress = null;
+            if (viewMode === 'home') renderHomeDashboard();
+        }
+
+        // Render every page of a PDF to a JPEG data URL (base64). Tight cap on
+        // max width keeps each page image around 100-200 KB so a 3-page chunk
+        // payload fits comfortably under the 4.5 MB Vercel body limit.
+        async function renderPdfPagesToImages(pdfPath, opts = {}) {
+            const maxWidth = opts.maxWidth || 1400;
+            const quality  = opts.quality  || 0.78;
+            const r = await fetch(pdfPath);
+            if (!r.ok) throw new Error(`Cannot fetch PDF: ${pdfPath}`);
+            const buf = await r.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+            const pages = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const baseVp = page.getViewport({ scale: 1 });
+                const scale = Math.min(2.0, maxWidth / baseVp.width);
+                const viewport = page.getViewport({ scale });
+                const canvas = document.createElement('canvas');
+                canvas.width  = Math.floor(viewport.width);
+                canvas.height = Math.floor(viewport.height);
+                const ctx = canvas.getContext('2d');
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+                pages.push({ pageNumber: i, base64 });
+            }
+            return pages;
+        }
+
+        // Send N page images + a strict-schema prompt to Claude. Returns the
+        // structured JSON for this chunk (may include partial problems whose
+        // remaining parts live in adjacent chunks — merge step handles that).
+        async function extractChunk(source, pageImages, isPaper) {
+            const pageRange = `${pageImages[0].pageNumber}-${pageImages[pageImages.length - 1].pageNumber}`;
+            const docType = isPaper ? 'EXAM PAPER' : 'SOLUTIONS';
+            const fieldName = isPaper ? 'prompt' : 'solution';
+
+            const promptText = `You are extracting structured exam data from pages ${pageRange} of the ${source.label} ${docType}. Each page is attached after this message as an image.
+
+For every problem and part visible on these pages, extract:
+- Problem number (integer) and a short descriptive title
+- Story / scenario paragraph (1-4 sentences) — only if visible on these pages
+- For each part (a, b, c, ...): the ${fieldName} text, points, modules tested (1-5), whether it requires WRITING Python code
+- DESCRIBE every figure (scatter plot, residual/QQ plot, bar chart, OLS regression output table, histogram, etc.) inline in the ${fieldName} text so a student reading the text alone would understand the visual content. List figures separately in the "figures" array too.
+
+Multi-page problems are normal — return only what's visible in the provided pages. Different chunks will be merged later by (problemNumber, partLetter).
+
+${isPaper ? '' : 'STRIP "Sensor guide" / "Grader guide" rubric lines — keep only the model answer text.'}
+
+Return ONLY this JSON (no markdown fences, no commentary):
+{
+  "examId": "${source.id}",
+  "pageRange": "${pageRange}",
+  "problems": [
+    {
+      "number": <int>,
+      "title": "<short descriptive title>",
+      "story": "<scenario text — empty string if not on these pages>",
+      "parts": [
+        {
+          "letter": "a",
+          "${fieldName}": "<the ${fieldName} text including inline figure descriptions, code blocks, tables>",
+          "points": <int or 0>,
+          "isCode": <true if requires writing Python>,
+          "modules": [<1-5>],
+          "figures": [<one short description per figure shown on this part>]
+        }
+      ]
+    }
+  ]
+}`;
+
+            const content = [{ type: 'text', text: promptText }];
+            for (const p of pageImages) {
+                content.push({
+                    type: 'image',
+                    source: { type: 'base64', media_type: 'image/jpeg', data: p.base64 }
+                });
+            }
+
+            try {
+                const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 4000,
+                        messages: [{ role: 'user', content }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.content) {
+                    throw new Error(data?.error?.message || data?.details || `API ${res.status}`);
+                }
+                const text = data.content.map(i => i.text || '').join('').trim();
+                const cleaned = text.replace(/```json|```/g, '').trim();
+                return JSON.parse(cleaned);
+            } catch (err) {
+                console.warn(`extractChunk(${source.id} ${docType} p${pageRange}) failed:`, err);
+                return null;
+            }
+        }
+
+        // Join chunk JSONs by (problemNumber, partLetter). Same problem split
+        // across chunks gets merged — for each field we keep the longest text
+        // (chunks containing the full content beat partial views), and figures
+        // / modules are unioned.
+        function mergeChunks(chunkResults, fieldName) {
+            const merged = {}; // problemNumber -> { number, title, story, parts: {letter: part} }
+            for (const chunk of chunkResults) {
+                if (!chunk || !Array.isArray(chunk.problems)) continue;
+                for (const p of chunk.problems) {
+                    const num = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
+                    if (!Number.isFinite(num)) continue;
+                    if (!merged[num]) {
+                        merged[num] = { number: num, title: p.title || '', story: p.story || '', parts: {} };
+                    } else {
+                        if ((p.title || '').length > (merged[num].title || '').length) merged[num].title = p.title;
+                        if ((p.story || '').length > (merged[num].story || '').length) merged[num].story = p.story;
+                    }
+                    for (const part of (p.parts || [])) {
+                        const letter = String(part.letter || '').toLowerCase().trim();
+                        if (!letter) continue;
+                        if (!merged[num].parts[letter]) {
+                            merged[num].parts[letter] = {
+                                letter,
+                                [fieldName]: part[fieldName] || '',
+                                points: part.points || 0,
+                                isCode: !!part.isCode,
+                                modules: Array.isArray(part.modules) ? [...part.modules] : [],
+                                figures: Array.isArray(part.figures) ? [...part.figures] : []
+                            };
+                        } else {
+                            const ex = merged[num].parts[letter];
+                            const incoming = part[fieldName] || '';
+                            if (incoming.length > (ex[fieldName] || '').length) ex[fieldName] = incoming;
+                            if (part.points && !ex.points) ex.points = part.points;
+                            if (part.isCode) ex.isCode = true;
+                            if (Array.isArray(part.modules)) ex.modules = [...new Set([...ex.modules, ...part.modules])];
+                            if (Array.isArray(part.figures)) ex.figures = [...ex.figures, ...part.figures];
+                        }
+                    }
+                }
+            }
+            return Object.values(merged)
+                .map(p => ({
+                    ...p,
+                    parts: Object.values(p.parts).sort((a, b) => a.letter.localeCompare(b.letter))
+                }))
+                .sort((a, b) => a.number - b.number);
+        }
+
+        // Vision pipeline for one side of one exam (paper OR solutions).
+        async function extractFromPdf(source, pdfPath, isPaper) {
+            const sideLabel = isPaper ? 'paper' : 'solutions';
+            setExtractionProgress(`Rendering ${source.label} ${sideLabel}…`, null, null);
+            let pages;
+            try {
+                // 30s cap so a malformed PDF can't lock the whole pipeline.
+                // Trial paper is ~8 pages (< 20s typical); larger exams may
+                // need a longer cap once EXTRACT_ALL_EXAMS is flipped.
+                pages = await withTimeout(
+                    renderPdfPagesToImages(pdfPath),
+                    30000,
+                    `PDF render ${pdfPath}`
+                );
+            } catch (err) {
+                console.warn(`renderPdfPagesToImages failed for ${pdfPath}:`, err);
+                return [];
+            }
+            const CHUNK_SIZE = 3;
+            const chunks = [];
+            for (let i = 0; i < pages.length; i += CHUNK_SIZE) {
+                chunks.push(pages.slice(i, i + CHUNK_SIZE));
+            }
+            // Concurrency = 3 balances speed vs API rate limits
+            const CONCURRENCY = 3;
+            const results = [];
+            for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+                const batch = chunks.slice(i, i + CONCURRENCY);
+                const batchResults = await Promise.all(batch.map(c => extractChunk(source, c, isPaper)));
+                results.push(...batchResults);
+                setExtractionProgress(
+                    `Reading ${source.label} ${sideLabel}…`,
+                    Math.min(chunks.length, i + batch.length),
+                    chunks.length
+                );
+            }
+            return mergeChunks(results, isPaper ? 'prompt' : 'solution');
+        }
+
+        // Text-only fallback (one call, no chunking) for the rare case where a
+        // PDF is missing or fails to render but a .txt is present.
+        async function extractFromTxt(source, txtPath, isPaper) {
+            const sideLabel = isPaper ? 'paper' : 'solutions';
+            setExtractionProgress(`Reading ${source.label} ${sideLabel} (text only)…`, null, null);
+            let text;
+            try {
+                const r = await fetch(txtPath);
+                if (!r.ok) return [];
+                text = await r.text();
+            } catch {
+                return [];
+            }
+            const fieldName = isPaper ? 'prompt' : 'solution';
+            const prompt = `You are extracting structured exam data from the ${source.label} ${isPaper ? 'EXAM PAPER' : 'SOLUTIONS'} (text only — no figure visuals).
+
+TEXT:
+${text.slice(0, 60000)}
+
+Return ONLY this JSON:
+{
+  "examId": "${source.id}",
+  "problems": [
+    { "number": <int>, "title": "<short>", "story": "<scenario>",
+      "parts": [
+        { "letter": "a", "${fieldName}": "<text>", "points": <int>, "isCode": <bool>, "modules": [<1-5>], "figures": [] }
+      ]
+    }
+  ]
+}
+
+${isPaper ? '' : 'STRIP Sensor guide rubric lines.'} The "figures" array stays empty since visuals are not available in text mode.`;
+            try {
+                const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 6000,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.content) return [];
+                const body = data.content.map(i => i.text || '').join('').trim();
+                const cleaned = body.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(cleaned);
+                return Array.isArray(parsed.problems) ? parsed.problems : [];
+            } catch (err) {
+                console.warn(`extractFromTxt(${source.id} ${sideLabel}) failed:`, err);
+                return [];
+            }
+        }
+
+        // Per-exam orchestration: extract paper + solution sides (PDF preferred,
+        // TXT fallback), then merge the two by (problemNumber, partLetter).
+        async function extractOneExamStructure(source) {
+            // Paper + sol run in parallel — different API calls don't block each other
+            const [paperProblems, solProblems] = await Promise.all([
+                source.paperPdf
+                    ? extractFromPdf(source, source.paperPdf, true)
+                    : (source.paperTxt ? extractFromTxt(source, source.paperTxt, true) : Promise.resolve([])),
+                source.solPdf
+                    ? extractFromPdf(source, source.solPdf, false)
+                    : (source.solTxt ? extractFromTxt(source, source.solTxt, false) : Promise.resolve([]))
+            ]);
+
+            if (paperProblems.length === 0 && solProblems.length === 0) {
+                console.warn(`No data extracted for ${source.id}`);
+                return null;
+            }
+
+            // Build (number,letter) → solution-part lookup from the solutions side
+            const solIndex = {};
+            for (const p of solProblems) {
+                for (const part of (p.parts || [])) {
+                    solIndex[`${p.number}-${(part.letter || '').toLowerCase()}`] = { part, problem: p };
+                }
+            }
+
+            // Use paper as the spine; orphan sol-only problems are appended after
+            const paperKeys = new Set(paperProblems.map(p => String(p.number)));
+            const spine = paperProblems.length > 0 ? paperProblems : solProblems;
+            const isPaperSpine = paperProblems.length > 0;
+
+            const problems = spine.map(p => ({
+                number: p.number,
+                title: p.title || '',
+                story: (() => {
+                    // Prefer the paper story; fall back to the sol problem's story if richer
+                    const altKey = `${p.number}-a`;
+                    const altStory = solIndex[altKey]?.problem?.story || '';
+                    const baseStory = p.story || '';
+                    return baseStory.length >= altStory.length ? baseStory : altStory;
+                })(),
+                parts: (p.parts || []).map(part => {
+                    const key = `${p.number}-${(part.letter || '').toLowerCase()}`;
+                    const sol = isPaperSpine ? solIndex[key]?.part : null;
+                    return {
+                        letter: part.letter,
+                        prompt: isPaperSpine ? (part.prompt || '') : '',
+                        solution: isPaperSpine ? (sol?.solution || '') : (part.solution || ''),
+                        points: part.points || sol?.points || 0,
+                        isCode: !!part.isCode || !!sol?.isCode,
+                        modules: (part.modules && part.modules.length) ? part.modules : (sol?.modules || []),
+                        figures: [...(part.figures || []), ...((sol?.figures) || [])]
+                    };
+                })
+            }));
+
+            // Append any sol-only problems that didn't have a paper counterpart
+            if (isPaperSpine) {
+                for (const sp of solProblems) {
+                    if (paperKeys.has(String(sp.number))) continue;
+                    problems.push({
+                        number: sp.number,
+                        title: sp.title || '',
+                        story: sp.story || '',
+                        parts: (sp.parts || []).map(part => ({
+                            letter: part.letter,
+                            prompt: '',
+                            solution: part.solution || '',
+                            points: part.points || 0,
+                            isCode: !!part.isCode,
+                            modules: part.modules || [],
+                            figures: part.figures || []
+                        }))
+                    });
+                }
+                problems.sort((a, b) => a.number - b.number);
+            }
+
+            return {
+                examId: source.id,
+                label: source.label,
+                totalPoints: problems.reduce((s, p) => s + p.parts.reduce((ss, pt) => ss + (pt.points || 0), 0), 0) || 100,
+                problems
+            };
+        }
+
+        // Phase 2: given all structured exams, build the topic taxonomy with
+        // each topic linked to specific past question IDs (e.g. v25-retake-3c).
+        async function buildTopicTaxonomy(exams) {
+            // Compact summary for the prompt — full JSON is large but well within
+            // Sonnet's context window. We strip 'solution' to halve token count.
+            const compactExams = exams.map(e => ({
+                examId: e.examId,
+                label: e.label,
+                problems: (e.problems || []).map(p => ({
+                    number: p.number,
+                    title: p.title,
+                    parts: (p.parts || []).map(pt => ({
+                        letter: pt.letter,
+                        prompt: (pt.prompt || '').slice(0, 600),
+                        points: pt.points,
+                        isCode: !!pt.isCode,
+                        modules: pt.modules || []
+                    }))
+                }))
+            }));
+
+            const prompt = `You have structured data for past TECH3 statistics exams below. Build a topic taxonomy where every topic links to the SPECIFIC past-question IDs (format <examId>-<problemNumber><partLetter>, e.g. "v25-retake-3c") that test it.
+
+The NEXT exam will be in PYTHON format with MORE code-writing than past V25 exams.
+
+EXAMS_JSON:
+${JSON.stringify(compactExams)}
+
+Return ONLY this JSON (no markdown fences):
+
+{
+  "topics": [
+    {
+      "id": "t-<kebab-case-slug>",
+      "name": "<concise topic name students would recognize>",
+      "module": <1-5>,
+      "frequency": "very-high" | "high" | "medium" | "low",
+      "subSkills": ["<2-6 specific subskills>"],
+      "examplePhrasing": "<one short example of how it's typically asked>",
+      "linkedQuestionIds": ["<examId>-<problemNumber><partLetter>", ...],
+      "pythonHeavy": <true if past questions on this topic involve reading/writing Python, false otherwise>,
+      "criticalForRetake": <true if this topic appears in 2+ exams OR is core to the Python-heavy direction>
+    }
+    // 12-20 topics. Every topic MUST have at least one linkedQuestionIds entry.
+  ],
+  "outline": [
+    { "problemSlot": 1, "typical": "<what this problem position usually asks>", "moduleHints": [1], "skills": ["..."] },
+    { "problemSlot": 2, "...": "..." },
+    { "problemSlot": 3, "...": "..." },
+    { "problemSlot": 4, "...": "..." },
+    { "problemSlot": 5, "...": "..." }
+  ],
+  "criticalKeywords": ["extrapolation", "confounder", "spurious correlation", "homoskedasticity", "..."],
+  "pythonExpectations": "<1-2 sentences on what Python skills the next exam will test>"
+}
+
+Use EXACT question IDs that appear in EXAMS_JSON. Do not invent IDs.`;
+
+            try {
+                const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 6000,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.content) {
+                    throw new Error(data?.error?.message || data?.details || `API ${res.status}`);
+                }
+                const text = data.content.map(i => i.text || '').join('').trim();
+                const cleaned = text.replace(/```json|```/g, '').trim();
+                return JSON.parse(cleaned);
+            } catch (err) {
+                console.error('buildTopicTaxonomy failed:', err);
+                return null;
+            }
+        }
+
+        async function extractExamTaxonomy(force = false) {
+            if (!force && examMeta && examMeta.version === EXAM_TAXONOMY_VERSION && examMeta.exams && examMeta.topics) {
+                return examMeta;
+            }
+
+            // Phase 1: extract each exam SEQUENTIALLY so we don't trip API rate
+            // limits — each exam internally fans out to ~3 concurrent vision
+            // calls per side. Running all 3 exams parallel would mean ~18
+            // concurrent calls which is too aggressive.
+            const exams = [];
+            for (let i = 0; i < EXAM_SOURCES.length; i++) {
+                setExtractionProgress(`Processing ${EXAM_SOURCES[i].label}…`, i, EXAM_SOURCES.length);
+                const result = await extractOneExamStructure(EXAM_SOURCES[i]);
+                if (result) exams.push(result);
+            }
+            if (exams.length === 0) {
+                console.warn('Phase 1 failed — could not extract any exam structure.');
+                clearExtractionProgress();
+                return null;
+            }
+
+            // Phase 2: build topic taxonomy linked to specific question IDs
+            setExtractionProgress('Building topic taxonomy…', EXAM_SOURCES.length, EXAM_SOURCES.length);
+            const taxonomy = await buildTopicTaxonomy(exams);
+            if (!taxonomy) {
+                console.warn('Phase 2 failed — taxonomy build did not return.');
+                clearExtractionProgress();
+                return null;
+            }
+
+            examMeta = {
+                version: EXAM_TAXONOMY_VERSION,
+                generatedAt: new Date().toISOString(),
+                exams,
+                topics: taxonomy.topics || [],
+                outline: taxonomy.outline || [],
+                criticalKeywords: taxonomy.criticalKeywords || [],
+                pythonExpectations: taxonomy.pythonExpectations || '',
+                mockExamHistory: (examMeta && examMeta.mockExamHistory) || []
+            };
+            saveData();
+            clearExtractionProgress();
+            return examMeta;
+        }
+
+        // ─── Past-question helpers ─────────────────────────────────────
+        // Stable ID format: <examId>-<problemNumber><partLetter>, e.g. "v25-retake-3c".
+
+        function makeQuestionId(examId, problemNumber, partLetter) {
+            return `${examId}-${problemNumber}${partLetter}`;
+        }
+
+        function examQuestionRef(qid) {
+            if (!examMeta || !examMeta.exams) return null;
+            // Parse: <examId>-<problemNumber><partLetter>
+            const m = /^(.+)-(\d+)([a-z])$/i.exec(qid);
+            if (!m) return null;
+            const [, examId, num, letter] = m;
+            const exam = examMeta.exams.find(e => e.examId === examId);
+            if (!exam) return null;
+            const problem = (exam.problems || []).find(p => String(p.number) === num);
+            if (!problem) return null;
+            const part = (problem.parts || []).find(p => (p.letter || '').toLowerCase() === letter.toLowerCase());
+            if (!part) return null;
+            // Short label: "Retake P3c"
+            const tag = exam.label.replace(/\(.*\)/, '').replace('V25', '').trim() || examId;
+            return { exam, problem, part, short: `${tag} P${num}${letter}` };
+        }
+
+        function examTopicById(id) {
+            if (!examMeta || !examMeta.topics) return null;
+            return examMeta.topics.find(t => t.id === id) || null;
+        }
+
+        function examTopicNameById(id) {
+            const t = examTopicById(id);
+            return t ? t.name : null;
+        }
+
+        function getAllPastQuestions() {
+            if (!examMeta || !examMeta.exams) return [];
+            const flat = [];
+            for (const ex of examMeta.exams) {
+                for (const p of (ex.problems || [])) {
+                    for (const pt of (p.parts || [])) {
+                        flat.push({
+                            qid: makeQuestionId(ex.examId, p.number, pt.letter),
+                            examId: ex.examId,
+                            examLabel: ex.label,
+                            problemNumber: p.number,
+                            problemTitle: p.title,
+                            problemStory: p.story,
+                            partLetter: pt.letter,
+                            prompt: pt.prompt,
+                            solution: pt.solution,
+                            points: pt.points,
+                            isCode: !!pt.isCode,
+                            modules: pt.modules || []
+                        });
+                    }
+                }
+            }
+            return flat;
+        }
+
+        function viewExamQuestion(qid) {
+            const ref = examQuestionRef(qid);
+            if (!ref) { alert('Question not found: ' + qid); return; }
+            const m = ensureExamQuestionModal();
+            m.classList.add('show');
+            const codeBadge = ref.part.isCode ? '<span class="freq-pill freq-code">Python</span>' : '';
+            const moduleBadge = (ref.part.modules || []).length
+                ? `<span class="freq-pill">Modules ${(ref.part.modules).join(', ')}</span>` : '';
+            const pointsBadge = ref.part.points ? `<span class="freq-pill">${ref.part.points} pts</span>` : '';
+            document.getElementById('examQuestionBody').innerHTML = `
+                <div class="mock-exam-toolbar">
+                    <h2 style="margin: 0;">${escapeHtml(ref.exam.label)} — Problem ${ref.problem.number}${escapeHtml(ref.part.letter)}</h2>
+                    <button class="btn-secondary" onclick="closeExamQuestionModal()">Close</button>
+                </div>
+                <div class="past-q-meta">${codeBadge} ${moduleBadge} ${pointsBadge}</div>
+                <div class="past-q-section">
+                    <div class="past-q-section-label">Problem story</div>
+                    <div class="past-q-section-body">${renderMarkdown(ref.problem.story || '')}</div>
+                </div>
+                <div class="past-q-section">
+                    <div class="past-q-section-label">Part ${escapeHtml(ref.part.letter)}</div>
+                    <div class="past-q-section-body">${renderMarkdown(ref.part.prompt || '')}</div>
+                </div>
+                ${ref.part.solution ? `
+                    <details class="past-q-solution">
+                        <summary>Show model answer</summary>
+                        <div class="past-q-section-body">${renderMarkdown(ref.part.solution)}</div>
+                    </details>
+                ` : ''}
+            `;
+        }
+
+        function ensureExamQuestionModal() {
+            let m = document.getElementById('examQuestionModal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'examQuestionModal';
+                m.className = 'modal mock-exam-modal';
+                m.innerHTML = `<div class="modal-content mock-exam-content" id="examQuestionBody"></div>`;
+                document.body.appendChild(m);
+            }
+            return m;
+        }
+        function closeExamQuestionModal() {
+            const m = document.getElementById('examQuestionModal');
+            if (m) m.classList.remove('show');
+        }
+
+        function renderPastQuestionsPage() {
+            viewMode = 'home';
+            currentResource = null;
+            const header = document.getElementById('contentHeader');
+            const body = document.getElementById('contentBody');
+
+            const all = getAllPastQuestions();
+            header.innerHTML = `
+                <div class="home-hero">
+                    <div>
+                        <div class="content-title">Past exam questions</div>
+                        <div class="content-meta"><span>${all.length} parts across ${examMeta?.exams?.length || 0} exams</span></div>
+                    </div>
+                    <button class="btn-pdf-action" onclick="renderHomeDashboard()">Back to dashboard</button>
+                </div>
+            `;
+
+            if (all.length === 0) {
+                body.innerHTML = `<div class="empty-state"><div class="empty-state-text">No past exam data yet — wait for the exam map to finish building.</div></div>`;
+                return;
+            }
+
+            // Track which past questions are referenced by user's content
+            const referenced = new Set();
+            for (const r of resources) {
+                for (const n of (r.studyNotes || [])) (n.importance?.linkedQuestionIds || []).forEach(q => referenced.add(q));
+                for (const ex of (r.exercises || [])) (ex.importance?.linkedQuestionIds || []).forEach(q => referenced.add(q));
+            }
+
+            // Group by exam
+            const byExam = {};
+            for (const q of all) {
+                if (!byExam[q.examLabel]) byExam[q.examLabel] = [];
+                byExam[q.examLabel].push(q);
+            }
+
+            body.innerHTML = Object.entries(byExam).map(([label, parts]) => {
+                const rows = parts.map(q => {
+                    const linked = referenced.has(q.qid);
+                    const codePill = q.isCode ? '<span class="freq-pill freq-code">Python</span>' : '';
+                    const modulePill = q.modules.length ? `<span class="freq-pill">M${q.modules.join(',')}</span>` : '';
+                    return `
+                        <div class="home-row past-q-row ${linked ? 'linked' : 'unlinked'}" onclick="viewExamQuestion('${q.qid}')">
+                            <div class="home-row-name">
+                                P${q.problemNumber}${escapeHtml(q.partLetter)} — ${escapeHtml(q.problemTitle || '')}
+                                ${codePill} ${modulePill}
+                            </div>
+                            <div class="home-row-meta">${linked ? 'linked from your notes' : 'not yet practiced'}</div>
+                            <div class="home-row-score">${q.points || 0} pts</div>
+                        </div>
+                    `;
+                }).join('');
+                return `
+                    <div class="outline-section">
+                        <h3>${escapeHtml(label)}</h3>
+                        ${rows}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ─── Importance assessment ─────────────────────────────────────
+        function itemNeedsAssessment(item) {
+            if (!item) return false;
+            const imp = item.importance;
+            return !(imp && imp.assessedAt && imp.version === EXAM_TAXONOMY_VERSION);
+        }
+
+        function getItemContentText(item, kind) {
+            let raw = '';
+            if (kind === 'note')      raw = item.body || item.raw || item.content || '';
+            else if (kind === 'exercise') raw = item.body || item.raw || '';
+            return (item.topic ? `Title: ${item.topic}\n` : '') + raw.slice(0, 2500);
+        }
+
+        async function assessImportanceBatch(items) {
+            if (!examMeta || !examMeta.topics || items.length === 0) return [];
+
+            const topicLines = examMeta.topics.map(t =>
+                `- ${t.id}  (${t.frequency}${t.pythonHeavy ? ', python-heavy' : ''})  ${t.name}`
+            ).join('\n');
+            const keywords = (examMeta.criticalKeywords || []).join(', ');
+
+            // Compact list of past question IDs with a one-line summary so the
+            // model can link items to specific exam questions, not just topics.
+            const pastQs = getAllPastQuestions();
+            const pastQLines = pastQs.map(q =>
+                `- ${q.qid}: ${(q.prompt || '').replace(/\s+/g, ' ').slice(0, 140)}`
+            ).join('\n');
+
+            const itemsBlock = items.map((it, i) =>
+                `[${i}] kind=${it.kind}\n${it.content}\n`
+            ).join('\n---\n');
+
+            const prompt = `You are helping a student prioritize study material for the NHH TECH3 statistics retake. The next exam will be in Python format with MORE code-writing than past V25 exams.
+
+EXAM TOPICS (id → frequency → name):
+${topicLines}
+
+PAST EXAM QUESTIONS (id : prompt summary):
+${pastQLines}
+
+CRITICAL KEYWORDS graders reward: ${keywords}
+
+For EACH study item below, decide:
+- level: "critical" (maps to a high/very-high frequency topic — student MUST master), "important" (relevant but lower frequency or a building block), or "reference" (background; not directly tested).
+- examTopics: array of topic IDs from above (0-4 entries). Use the EXACT ids (e.g. "t-chi-squared-test").
+- linkedQuestionIds: array of past-question IDs from above (0-4 entries) that this item is closest to or directly relates to. Use EXACT ids (e.g. "v25-retake-3c").
+- reasoning: ONE concise sentence.
+
+ITEMS:
+${itemsBlock}
+
+Return ONLY this JSON (no markdown fences):
+{ "assessments": [ { "index": 0, "level": "critical"|"important"|"reference", "examTopics": ["t-..."], "linkedQuestionIds": ["v25-..."], "reasoning": "..." }, ... ] }`;
+
+            try {
+                const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 3000,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.content) {
+                    throw new Error(data?.error?.message || data?.details || `API ${res.status}`);
+                }
+                const text = data.content.map(i => i.text || '').join('').trim();
+                const cleaned = text.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(cleaned);
+                return parsed.assessments || [];
+            } catch (err) {
+                console.error('assessImportanceBatch failed:', err);
+                return [];
+            }
+        }
+
+        async function assessSingleItem(item, kind) {
+            if (!item || !examMeta) return;
+            const results = await assessImportanceBatch([{ kind, content: getItemContentText(item, kind) }]);
+            if (results.length > 0) {
+                const r = results[0];
+                item.importance = {
+                    level: r.level,
+                    examTopics: r.examTopics || [],
+                    linkedQuestionIds: r.linkedQuestionIds || [],
+                    reasoning: r.reasoning || '',
+                    assessedAt: new Date().toISOString(),
+                    version: EXAM_TAXONOMY_VERSION
+                };
+                saveData();
+            }
+        }
+
+        async function runImportanceBackfill() {
+            if (importanceProgress) return; // already running
+            if (!examMeta) await extractExamTaxonomy();
+            if (!examMeta) return;
+
+            // Collect unassessed notes + exercises across all resources.
+            // (Auto-generated questions are deliberately skipped — too many,
+            // and the topicName already places them on the importance map.)
+            const queue = [];
+            for (const r of resources) {
+                for (const n of (r.studyNotes || [])) {
+                    if (itemNeedsAssessment(n)) queue.push({ kind: 'note', item: n });
+                }
+                for (const ex of (r.exercises || [])) {
+                    if (itemNeedsAssessment(ex)) queue.push({ kind: 'exercise', item: ex });
+                }
+            }
+            if (queue.length === 0) return;
+
+            importanceProgress = { current: 0, total: queue.length };
+            renderImportanceProgress();
+
+            const BATCH = 5;
+            for (let i = 0; i < queue.length; i += BATCH) {
+                const batch = queue.slice(i, i + BATCH);
+                const payload = batch.map(b => ({
+                    kind: b.kind,
+                    content: getItemContentText(b.item, b.kind)
+                }));
+                const results = await assessImportanceBatch(payload);
+                for (const r of results) {
+                    const target = batch[r.index];
+                    if (!target) continue;
+                    target.item.importance = {
+                        level: r.level,
+                        examTopics: r.examTopics || [],
+                        linkedQuestionIds: r.linkedQuestionIds || [],
+                        reasoning: r.reasoning || '',
+                        assessedAt: new Date().toISOString(),
+                        version: EXAM_TAXONOMY_VERSION
+                    };
+                }
+                importanceProgress.current = Math.min(queue.length, i + BATCH);
+                renderImportanceProgress();
+                saveData();
+            }
+            importanceProgress = null;
+            renderImportanceProgress();
+
+            // Refresh whatever view is open so badges show up
+            if (viewMode === 'home') renderHomeDashboard();
+            else if (currentResource) renderResourceContent();
+        }
+
+        function renderImportanceProgress() {
+            let el = document.getElementById('importanceProgress');
+            if (!importanceProgress) {
+                if (el) el.remove();
+                return;
+            }
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'importanceProgress';
+                el.className = 'importance-progress';
+                document.body.appendChild(el);
+            }
+            const { current, total } = importanceProgress;
+            const pct = total ? (current / total * 100).toFixed(1) : 0;
+            el.innerHTML = `
+                <div class="ip-title">Assessing exam relevance</div>
+                <div class="ip-bar"><div class="ip-bar-fill" style="width: ${pct}%"></div></div>
+                <div class="ip-stats">${current} / ${total} items</div>
+            `;
+        }
+
+        function renderImportanceBadge(item) {
+            if (!item || !item.importance) return '';
+            const lvl = item.importance.level;
+            if (lvl !== 'critical' && lvl !== 'important') return '';
+            const cls = lvl === 'critical' ? 'critical' : 'important';
+            const label = lvl === 'critical' ? 'Absolutely exam-relevant' : 'Exam-relevant';
+            const topics = (item.importance.examTopics || []).slice(0, 2);
+            const linked = (item.importance.linkedQuestionIds || []).slice(0, 4);
+            const reasoning = (item.importance.reasoning || '').replace(/"/g, "'");
+
+            const topicsHtml = topics.map(t => {
+                const name = examTopicNameById(t) || t;
+                return `<span class="erb-topic-pill">${escapeHtml(name)}</span>`;
+            }).join('');
+            const linkedHtml = linked.map(qid => {
+                const ref = examQuestionRef(qid);
+                if (!ref) return '';
+                return `<span class="erb-link-pill" onclick="event.stopPropagation(); viewExamQuestion('${qid}')" title="Open past exam question">${escapeHtml(ref.short)}</span>`;
+            }).join('');
+
+            return `
+                <div class="exam-relevance-badge ${cls}" title="${escapeHtml(reasoning)}">
+                    <span class="erb-label">${label}</span>
+                    ${topicsHtml ? `<span class="erb-divider"></span>${topicsHtml}` : ''}
+                    ${linkedHtml ? `<span class="erb-divider"></span><span class="erb-link-label">past Qs:</span>${linkedHtml}` : ''}
+                </div>
+            `;
+        }
+
+        // ─── Home dashboard ────────────────────────────────────────────
+        function aggregateCoveredTopics() {
+            const covered = new Map();
+            function add(name, attempts) {
+                if (!name) return;
+                if (!covered.has(name)) covered.set(name, { count: 0, answered: 0, totalRating: 0, ratedCount: 0 });
+                const c = covered.get(name);
+                c.count += 1;
+                for (const a of (attempts || [])) {
+                    c.answered += 1;
+                    if (a.feedback && typeof a.feedback.rating === 'number') {
+                        c.totalRating += a.feedback.rating;
+                        c.ratedCount += 1;
+                    }
+                }
+            }
+            for (const r of resources) {
+                for (const q of (r.questions || []))   add(q.topicName, q.attempts);
+                for (const n of (r.studyNotes || [])) add(n.topic, []);
+                for (const ex of (r.exercises || [])) add(ex.topic, ex.attempts);
+            }
+            return covered;
+        }
+
+        function buildExamTopicCoverage() {
+            if (!examMeta || !examMeta.topics) return [];
+            const stats = {};
+            for (const t of examMeta.topics) {
+                stats[t.id] = { topic: t, hits: 0, attempts: 0, totalRating: 0, ratedCount: 0, linkedPastQs: new Set() };
+            }
+            for (const r of resources) {
+                const tag = (item, attempts) => {
+                    const tags = item?.importance?.examTopics || [];
+                    for (const tId of tags) {
+                        if (!stats[tId]) continue;
+                        stats[tId].hits += 1;
+                        for (const a of (attempts || [])) {
+                            stats[tId].attempts += 1;
+                            if (a.feedback && typeof a.feedback.rating === 'number') {
+                                stats[tId].totalRating += a.feedback.rating;
+                                stats[tId].ratedCount += 1;
+                            }
+                        }
+                    }
+                    // Also collect linked past Qs so we can show "user has practiced this past Q"
+                    for (const qid of (item?.importance?.linkedQuestionIds || [])) {
+                        // Find topic(s) that include this qid and credit them
+                        for (const tId of Object.keys(stats)) {
+                            const linked = stats[tId].topic.linkedQuestionIds || [];
+                            if (linked.includes(qid)) stats[tId].linkedPastQs.add(qid);
+                        }
+                    }
+                };
+                for (const n of (r.studyNotes || [])) tag(n, []);
+                for (const ex of (r.exercises || [])) tag(ex, ex.attempts);
+            }
+            const freqRank = { 'very-high': 4, high: 3, medium: 2, low: 1 };
+            return Object.values(stats).sort((a, b) => {
+                if (!!a.topic.criticalForRetake !== !!b.topic.criticalForRetake) return b.topic.criticalForRetake ? 1 : -1;
+                const aF = freqRank[a.topic.frequency] || 0;
+                const bF = freqRank[b.topic.frequency] || 0;
+                if (aF !== bF) return bF - aF;
+                return b.attempts - a.attempts;
+            });
+        }
+
+        function countAllAttempts() {
+            let n = 0;
+            for (const r of resources) {
+                for (const q of (r.questions || []))  n += (q.attempts || []).length;
+                for (const ex of (r.exercises || [])) n += (ex.attempts || []).length;
+            }
+            return n;
+        }
+
+        function ratingClass(avg, hasRatings) {
+            if (!hasRatings) return 'fair';
+            return avg >= 8 ? 'good' : avg >= 6 ? 'fair' : 'weak';
+        }
+
+        function renderHomeDashboard() {
+            viewMode = 'home';
+            currentResource = null;
+            renderResourcesList();
+            const header = document.getElementById('contentHeader');
+            const body = document.getElementById('contentBody');
+
+            const covered = aggregateCoveredTopics();
+            const sortedCovered = [...covered.entries()].sort((a, b) => b[1].count - a[1].count);
+            const examStats = buildExamTopicCoverage();
+            const examTaxonomyReady = !!examMeta && !!examMeta.topics;
+
+            let statusBlock = '';
+            if (extractionProgress) {
+                const { message, current, total } = extractionProgress;
+                const counter = (typeof current === 'number' && typeof total === 'number')
+                    ? ` (${current}/${total})` : '…';
+                const pct = (typeof current === 'number' && typeof total === 'number' && total > 0)
+                    ? Math.min(100, (current / total) * 100) : 0;
+                statusBlock = `
+                    <div class="home-status">
+                        <div>${escapeHtml(message || 'Building exam map')}${counter}</div>
+                        ${(typeof current === 'number' && typeof total === 'number')
+                            ? `<div class="ip-bar" style="margin-top: 6px;"><div class="ip-bar-fill" style="width: ${pct.toFixed(1)}%"></div></div>`
+                            : ''}
+                    </div>`;
+            } else if (importanceProgress) {
+                statusBlock = `<div class="home-status">Assessing exam relevance: ${importanceProgress.current}/${importanceProgress.total}…</div>`;
+            } else if (!examTaxonomyReady) {
+                statusBlock = `<div class="home-status">Building exam map from past exams… this only happens once.</div>`;
+            }
+            const importanceMsg = statusBlock;
+
+            header.innerHTML = `
+                <div class="home-hero">
+                    <div>
+                        <div class="content-title">Welcome back — let's prep for the retake</div>
+                        <div class="content-meta">
+                            <span>${resources.length} resources</span>
+                            <span>${countAllAttempts()} answers</span>
+                            <span>${examTaxonomyReady ? (examMeta.topics.length + ' exam topics mapped') : 'Building exam map…'}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn-pdf-action" onclick="renderExamOutlinePage()">Exam outline</button>
+                        <button class="btn-pdf-action" onclick="renderPastQuestionsPage()">Past exam questions</button>
+                        <button class="btn-pdf-action btn-primary" onclick="openMockExamSetup()">Generate mock exam</button>
+                    </div>
+                </div>
+            `;
+
+            const coveredHtml = sortedCovered.length === 0
+                ? `<div class="empty-state"><div class="empty-state-text">No topics covered yet. Upload resources and add notes/exercises.</div></div>`
+                : sortedCovered.map(([name, s]) => {
+                    const avg = s.ratedCount > 0 ? s.totalRating / s.ratedCount : 0;
+                    const avgStr = s.ratedCount > 0 ? avg.toFixed(1) + '/10' : '—';
+                    const rc = ratingClass(avg, s.ratedCount > 0);
+                    return `
+                        <div class="home-row">
+                            <div class="home-row-name">${escapeHtml(name)}</div>
+                            <div class="home-row-meta">${s.count} items · ${s.answered} answered</div>
+                            <div class="home-row-score rating-${rc}">${avgStr}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            const examColHtml = !examTaxonomyReady
+                ? `<div class="empty-state"><div class="empty-state-text">Exam map not built yet.</div></div>`
+                : examStats.map(s => {
+                    const avg = s.ratedCount > 0 ? s.totalRating / s.ratedCount : 0;
+                    const avgStr = s.ratedCount > 0 ? avg.toFixed(1) + '/10' : '—';
+                    const rc = ratingClass(avg, s.ratedCount > 0);
+                    const freqCls = (s.topic.frequency || '').replace(/-/g, '');
+                    const status = s.hits === 0 ? 'uncovered' : (s.attempts > 0 ? 'practiced' : 'noted');
+                    const allLinked = s.topic.linkedQuestionIds || [];
+                    const practicedLinked = s.linkedPastQs.size;
+                    const statusMeta = s.hits === 0
+                        ? 'Not linked yet'
+                        : `${s.hits} items · ${s.attempts} answered`;
+                    const pastQsLine = allLinked.length > 0
+                        ? `<div class="home-row-pastqs">${practicedLinked}/${allLinked.length} past Qs touched · ${allLinked.slice(0, 4).map(qid => {
+                            const ref = examQuestionRef(qid);
+                            const touched = s.linkedPastQs.has(qid);
+                            return ref
+                                ? `<span class="past-q-mini ${touched ? 'touched' : ''}" onclick="event.stopPropagation(); viewExamQuestion('${qid}')" title="${escapeHtml(ref.exam.label + ' P' + ref.problem.number + ref.part.letter)}">${escapeHtml(ref.short)}</span>`
+                                : '';
+                        }).join('')}</div>`
+                        : '';
+                    return `
+                        <div class="home-row exam-row ${status}">
+                            <div class="home-row-name">
+                                ${escapeHtml(s.topic.name)}
+                                <span class="freq-pill freq-${freqCls}">${s.topic.frequency || ''}</span>
+                                ${s.topic.criticalForRetake ? '<span class="freq-pill freq-critical">critical</span>' : ''}
+                                ${s.topic.pythonHeavy ? '<span class="freq-pill freq-code">Python</span>' : ''}
+                                ${pastQsLine}
+                            </div>
+                            <div class="home-row-meta">${statusMeta}</div>
+                            <div class="home-row-score rating-${rc}">${avgStr}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            body.innerHTML = `
+                ${importanceMsg}
+                <div class="home-grid">
+                    <div class="home-col">
+                        <div class="home-col-header">
+                            <h3>What you've covered</h3>
+                            <span class="thread-count">${sortedCovered.length} topics</span>
+                        </div>
+                        ${coveredHtml}
+                    </div>
+                    <div class="home-col">
+                        <div class="home-col-header">
+                            <h3>What the exam repeatedly asks</h3>
+                            <span class="thread-count">${examStats.length} topics</span>
+                        </div>
+                        ${examColHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ─── Exam outline view ─────────────────────────────────────────
+        function renderExamOutlinePage() {
+            viewMode = 'home';
+            currentResource = null;
+            const header = document.getElementById('contentHeader');
+            const body = document.getElementById('contentBody');
+
+            if (!examMeta || !examMeta.topics) {
+                header.innerHTML = `<div class="content-title">Exam Outline</div>`;
+                body.innerHTML = `<div class="empty-state"><div class="empty-state-text">The exam map hasn't been built yet. Open the dashboard and wait for the first analysis to finish.</div></div>`;
+                return;
+            }
+
+            header.innerHTML = `
+                <div class="home-hero">
+                    <div>
+                        <div class="content-title">Exam outline — what to expect</div>
+                        <div class="content-meta"><span>Distilled from V25 Main, Retake, and Trial exams</span></div>
+                    </div>
+                    <button class="btn-pdf-action" onclick="renderHomeDashboard()">Back to dashboard</button>
+                </div>
+            `;
+
+            const outlineHtml = (examMeta.outline || []).map(slot => `
+                <div class="outline-slot">
+                    <div class="outline-slot-title">Problem ${slot.problemSlot} — Module ${(slot.moduleHints || []).join(', ')}</div>
+                    <div class="outline-slot-typical">${escapeHtml(slot.typical || '')}</div>
+                    <div class="outline-slot-skills">
+                        ${(slot.skills || []).map(s => `<span class="skill-pill">${escapeHtml(s)}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            const topicsHtml = (examMeta.topics || []).map(t => {
+                const linkedHtml = (t.linkedQuestionIds || []).map(qid => {
+                    const ref = examQuestionRef(qid);
+                    if (!ref) return '';
+                    return `<span class="past-q-mini" onclick="viewExamQuestion('${qid}')" title="${escapeHtml(ref.exam.label + ' P' + ref.problem.number + ref.part.letter)}">${escapeHtml(ref.short)}</span>`;
+                }).join('');
+                return `
+                    <div class="outline-topic">
+                        <div class="outline-topic-head">
+                            <strong>${escapeHtml(t.name)}</strong>
+                            <span class="freq-pill freq-${(t.frequency || '').replace(/-/g, '')}">${t.frequency || ''}</span>
+                            ${t.pythonHeavy ? '<span class="freq-pill freq-code">Python-heavy</span>' : ''}
+                            ${t.criticalForRetake ? '<span class="freq-pill freq-critical">critical</span>' : ''}
+                            <span style="color: #6b7280; font-size: 11px;">Module ${t.module || '?'}</span>
+                        </div>
+                        <div class="outline-topic-skills">
+                            ${(t.subSkills || []).map(s => `<span class="skill-pill">${escapeHtml(s)}</span>`).join('')}
+                        </div>
+                        ${t.examplePhrasing ? `<div class="outline-topic-example">"${escapeHtml(t.examplePhrasing)}"</div>` : ''}
+                        ${linkedHtml ? `<div class="outline-topic-linked"><span class="erb-link-label">Past questions:</span>${linkedHtml}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            body.innerHTML = `
+                <div class="outline-section">
+                    <h3>Typical problem structure (5 problems)</h3>
+                    ${outlineHtml || '<div class="empty-state"><div class="empty-state-text">No outline yet.</div></div>'}
+                </div>
+                <div class="outline-section">
+                    <h3>Recurring topics</h3>
+                    ${topicsHtml}
+                </div>
+                ${examMeta.pythonExpectations ? `
+                    <div class="outline-section">
+                        <h3>Python expectations</h3>
+                        <div class="outline-python">${escapeHtml(examMeta.pythonExpectations)}</div>
+                    </div>
+                ` : ''}
+                ${(examMeta.criticalKeywords && examMeta.criticalKeywords.length) ? `
+                    <div class="outline-section">
+                        <h3>Keywords graders reward</h3>
+                        <div class="keyword-list">${examMeta.criticalKeywords.map(k => `<span class="skill-pill">${escapeHtml(k)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // ─── Editable daily target ─────────────────────────────────────
+        function editDailyTarget(kind) {
+            ensureDailyStats();
+            const current = kind === 'questions'
+                ? progressData.dailyGoal.targetQuestions
+                : progressData.dailyGoal.targetAvgRating;
+            const label = kind === 'questions' ? 'Daily question target' : 'Daily avg-score target (0-10)';
+            const v = prompt(label + ':', current);
+            if (v === null) return;
+            const n = parseFloat(v);
+            if (isNaN(n) || n <= 0) { alert('Enter a positive number'); return; }
+            if (kind === 'questions') progressData.dailyGoal.targetQuestions = Math.round(n);
+            else progressData.dailyGoal.targetAvgRating = Math.min(10, Math.max(0, n));
+            saveData();
+            updateDailyGoalDisplay();
+        }
+
+        // ─── Mock exam ─────────────────────────────────────────────────
+        function ensureMockExamModal() {
+            let m = document.getElementById('mockExamModal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'mockExamModal';
+                m.className = 'modal mock-exam-modal';
+                m.innerHTML = `<div class="modal-content mock-exam-content" id="mockExamBody"></div>`;
+                document.body.appendChild(m);
+            }
+            return m;
+        }
+
+        function openMockExamSetup() {
+            if (!examMeta || !examMeta.topics) {
+                alert('Wait for the exam analysis to finish first (it runs in the background after first load).');
+                return;
+            }
+            const modal = ensureMockExamModal();
+            modal.classList.add('show');
+            document.getElementById('mockExamBody').innerHTML = `
+                <h2 style="margin-top: 0;">Generate Mock Exam</h2>
+                <p style="color: #4b5563;">Produces a fresh 5-problem TECH3-style exam in Python format. Sit it timed, then submit for AI grading.</p>
+                <div class="form-group">
+                    <label class="form-label">Focus</label>
+                    <select class="form-select" id="mockExamFocus">
+                        <option value="balanced">Balanced (matches past exam mix)</option>
+                        <option value="weakAreas">Target my weak areas</option>
+                        <option value="codeHeavy">Code-heavy (more Python writing)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Time limit (minutes)</label>
+                    <input type="number" class="form-input" id="mockExamMinutes" value="240" min="30" max="360">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeMockExamModal()">Cancel</button>
+                    <button class="btn-primary" onclick="generateMockExam()">Generate</button>
+                </div>
+            `;
+        }
+
+        function closeMockExamModal() {
+            const m = document.getElementById('mockExamModal');
+            if (m) m.classList.remove('show');
+            if (mockExamSession && mockExamSession._timerId) {
+                clearInterval(mockExamSession._timerId);
+                mockExamSession._timerId = null;
+            }
+        }
+
+        async function generateMockExam() {
+            const focus = document.getElementById('mockExamFocus').value;
+            const minutes = parseInt(document.getElementById('mockExamMinutes').value, 10) || 240;
+            document.getElementById('mockExamBody').innerHTML = `
+                <h2 style="margin-top: 0;">Generating mock exam…</h2>
+                <p>This takes 20-40 seconds. Pulling from the recurring exam patterns.</p>
+                <div class="ip-bar"><div class="ip-bar-fill" style="width: 100%; animation: pulse 1.2s ease-in-out infinite;"></div></div>
+            `;
+
+            const examStats = buildExamTopicCoverage();
+            const weak = examStats.filter(s => s.ratedCount > 0 && (s.totalRating / s.ratedCount) < 6.5).map(s => s.topic.name).slice(0, 6);
+            const uncovered = examStats.filter(s => s.hits === 0 && s.topic.criticalForRetake).map(s => s.topic.name).slice(0, 6);
+
+            const focusGuidance =
+                focus === 'weakAreas' ? `Bias the problem mix toward these WEAK areas: ${weak.join(', ') || '(no weak areas yet)'}. Also include uncovered critical topics: ${uncovered.join(', ') || '(none)'}.`
+              : focus === 'codeHeavy' ? `At least 3 of 5 problems must include substantial Python code-writing subparts (10-30 lines). Cover: Monte Carlo loops, statsmodels OLS, bootstrap, KFold cross-validation, scipy.stats hypothesis tests.`
+              :                         `Balanced mix matching the past V25 exam structure.`;
+
+            // Real past-question snippets (style anchors). We send a representative
+            // sample so the model mimics phrasing, structure, and difficulty rather
+            // than hallucinating its own exam style.
+            const allPast = getAllPastQuestions();
+            const sample = allPast
+                .filter(q => q.problemStory && q.prompt)
+                .slice(0, 12)
+                .map(q => `--- ${q.qid} (${q.examLabel}, P${q.problemNumber}${q.partLetter})${q.isCode ? ' [code part]' : ''} ---
+STORY: ${(q.problemStory || '').slice(0, 350)}
+PROMPT: ${(q.prompt || '').slice(0, 500)}`).join('\n\n');
+
+            const prompt = `Generate a complete mock TECH3 exam (5 problems) in the exact style of past V25 exams. ${focusGuidance}
+
+TECH3 EXAM STYLE GUIDE:
+${TECH3_EXAM_STYLE}
+
+EXAM OUTLINE (typical problem slots):
+${JSON.stringify(examMeta.outline || [], null, 2)}
+
+RECURRING TOPICS (with frequency):
+${(examMeta.topics || []).map(t => `- ${t.id}: ${t.name} (${t.frequency}${t.pythonHeavy ? ', python-heavy' : ''})`).join('\n')}
+
+REAL PAST-QUESTION SAMPLES — match this phrasing, density, and style:
+${sample}
+
+REQUIREMENTS:
+- 5 problems numbered 1-5. Each embedded in a real-world story with named entity (company, scientist, household). DO NOT reuse the named entities from the samples — pick new ones.
+- Each problem has 3-6 lettered subparts (a, b, c, ...).
+- ≥ 3 problems include actual Python code subparts requiring students to WRITE code (10-30 lines). Be explicit in the prompt about what to produce.
+- For CLT problems: include MULTIPLE precomputed scipy.stats.norm.cdf(...) outputs with varied (loc, scale) and make the student pick.
+- For regression: include a realistic OLS Regression Results-style table inline; force interpretation in context + assumption checks (describe diagnostic plots in words).
+- Reward these grader keywords: ${(examMeta.criticalKeywords || []).join(', ')}.
+- Total = 100 points distributed across problems.
+- Each part should reference the past question IDs it's inspired by via "inspiredBy" so the student can compare to the real ones.
+
+Return ONLY this JSON (no markdown fences):
+{
+  "title": "TECH3 Mock Exam — ${new Date().toISOString().slice(0,10)}",
+  "totalPoints": 100,
+  "problems": [
+    {
+      "number": 1,
+      "title": "<short descriptive title>",
+      "story": "<2-4 sentences setting up the scenario with named entities>",
+      "totalPoints": 20,
+      "parts": [
+        {
+          "letter": "a",
+          "prompt": "<the question, with any provided data/output/Python snippets inline>",
+          "points": 8,
+          "expectedAnswer": "<brief description of what a full-credit answer contains>",
+          "isCode": false,
+          "examTopicIds": ["<topic id from the taxonomy>"],
+          "inspiredBy": ["<past question ID>"]
+        }
+      ]
+    }
+  ]
+}`;
+
+            try {
+                const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 12000,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.content) {
+                    throw new Error(data?.error?.message || data?.details || `API ${res.status}`);
+                }
+                const text = data.content.map(i => i.text || '').join('').trim();
+                const cleaned = text.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(cleaned);
+
+                mockExamSession = {
+                    id: Date.now(),
+                    title: parsed.title || 'TECH3 Mock Exam',
+                    problems: parsed.problems || [],
+                    totalPoints: parsed.totalPoints || 100,
+                    durationSec: minutes * 60,
+                    startedAt: null,
+                    answers: {},
+                    grades: {},
+                    status: 'ready'
+                };
+                renderMockExamSit();
+            } catch (err) {
+                console.error('mock exam error:', err);
+                document.getElementById('mockExamBody').innerHTML = `
+                    <h2 style="margin-top: 0;">Failed to generate</h2>
+                    <p style="color: #ef4444;">${escapeHtml(err.message || String(err))}</p>
+                    <div class="modal-actions"><button class="btn-primary" onclick="closeMockExamModal()">Close</button></div>
+                `;
+            }
+        }
+
+        function renderMockExamSit() {
+            if (!mockExamSession) return;
+            const m = mockExamSession;
+            if (!m.startedAt) m.startedAt = Date.now();
+            m.status = 'sitting';
+
+            const partsHtml = m.problems.map(p => {
+                const partsInner = (p.parts || []).map(part => `
+                    <div class="mock-part">
+                        <div class="mock-part-prompt"><strong>${escapeHtml(part.letter || '?')})</strong> ${renderMarkdown(part.prompt || '')}</div>
+                        <div class="mock-part-meta">
+                            ${part.isCode ? '<span class="freq-pill freq-code">Python code</span>' : ''}
+                            <span class="freq-pill">${part.points || 0} pts</span>
+                            ${(part.examTopicIds || part.examTopics || []).slice(0, 2).map(t => {
+                                const name = examTopicNameById(t) || t;
+                                return `<span class="skill-pill">${escapeHtml(name)}</span>`;
+                            }).join('')}
+                            ${(part.inspiredBy || []).slice(0, 2).map(qid => {
+                                const ref = examQuestionRef(qid);
+                                if (!ref) return '';
+                                return `<span class="past-q-mini" onclick="event.stopPropagation(); viewExamQuestion('${qid}')" title="See the past question this part is inspired by">${escapeHtml(ref.short)}</span>`;
+                            }).join('')}
+                        </div>
+                        <textarea class="note-textarea mock-answer" data-problem="${p.number}" data-part="${escapeHtml(part.letter || '')}" placeholder="Your answer...${part.isCode ? '\nFor code parts, write actual Python (use proper indentation).' : ''}"></textarea>
+                    </div>
+                `).join('');
+                return `
+                    <div class="mock-problem">
+                        <div class="mock-problem-header">
+                            <h3>Problem ${p.number}: ${escapeHtml(p.title || '')}</h3>
+                            <span class="mock-points">${p.totalPoints || 0} pts</span>
+                        </div>
+                        <div class="mock-story">${renderMarkdown(p.story || '')}</div>
+                        ${partsInner}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('mockExamBody').innerHTML = `
+                <div class="mock-exam-toolbar">
+                    <h2 style="margin: 0;">${escapeHtml(m.title)}</h2>
+                    <div id="mockExamTimer" class="mock-timer">${formatTimer(m.durationSec)}</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-primary" onclick="submitMockExam()">Submit for grading</button>
+                        <button class="btn-secondary" onclick="if(confirm('Discard this mock exam attempt?')) { mockExamSession=null; closeMockExamModal(); }">Discard</button>
+                    </div>
+                </div>
+                <div class="mock-exam-body">${partsHtml}</div>
+            `;
+
+            if (m._timerId) clearInterval(m._timerId);
+            m._timerId = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - m.startedAt) / 1000);
+                const remaining = m.durationSec - elapsed;
+                const el = document.getElementById('mockExamTimer');
+                if (!el) { clearInterval(m._timerId); return; }
+                if (remaining <= 0) {
+                    el.textContent = 'Time up';
+                    clearInterval(m._timerId);
+                    submitMockExam();
+                } else {
+                    el.textContent = formatTimer(remaining);
+                    el.className = remaining < 300 ? 'mock-timer warn' : 'mock-timer';
+                }
+            }, 1000);
+        }
+
+        async function submitMockExam() {
+            if (!mockExamSession) return;
+            const m = mockExamSession;
+            if (m._timerId) { clearInterval(m._timerId); m._timerId = null; }
+
+            // Collect answers from the DOM
+            document.querySelectorAll('.mock-answer').forEach(ta => {
+                const p = ta.getAttribute('data-problem');
+                const part = ta.getAttribute('data-part');
+                m.answers[`${p}-${part}`] = ta.value;
+            });
+
+            m.status = 'grading';
+            document.getElementById('mockExamBody').innerHTML = `
+                <h2 style="margin-top: 0;">Grading your mock exam…</h2>
+                <p>Claude is grading each subpart. This takes 30-60 seconds.</p>
+                <div class="ip-bar"><div class="ip-bar-fill" style="width: 100%; animation: pulse 1.2s ease-in-out infinite;"></div></div>
+            `;
+
+            const partsForGrading = [];
+            for (const p of m.problems) {
+                for (const part of (p.parts || [])) {
+                    const key = `${p.number}-${part.letter}`;
+                    partsForGrading.push({
+                        key,
+                        problemNumber: p.number,
+                        partLetter: part.letter,
+                        prompt: part.prompt,
+                        expectedAnswer: part.expectedAnswer || '',
+                        points: part.points || 0,
+                        isCode: !!part.isCode,
+                        studentAnswer: m.answers[key] || ''
+                    });
+                }
+            }
+
+            const gradingPrompt = `You are a strict but fair NHH TECH3 exam grader. Grade each part below against the expected answer description. Use the points value as max. Award partial credit. Be specific about what was missed.
+
+PARTS:
+${partsForGrading.map((p, i) => `[${i}] Problem ${p.problemNumber}${p.partLetter} (${p.points} pts${p.isCode ? ', Python code' : ''})
+PROMPT: ${p.prompt}
+EXPECTED FULL-CREDIT ANSWER: ${p.expectedAnswer}
+STUDENT ANSWER: ${p.studentAnswer || '(blank)'}
+`).join('\n---\n')}
+
+Return ONLY JSON (no markdown fences):
+{ "grades": [ { "index": 0, "earned": <number 0..points>, "feedback": "<1-2 sentence specific feedback>", "missed": ["<thing they missed>", ...] }, ... ] }`;
+
+            try {
+                const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 8000,
+                        messages: [{ role: 'user', content: gradingPrompt }]
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.content) {
+                    throw new Error(data?.error?.message || data?.details || `API ${res.status}`);
+                }
+                const text = data.content.map(i => i.text || '').join('').trim();
+                const cleaned = text.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(cleaned);
+                const grades = parsed.grades || [];
+
+                let totalEarned = 0;
+                for (const g of grades) {
+                    const part = partsForGrading[g.index];
+                    if (!part) continue;
+                    m.grades[part.key] = g;
+                    const earned = Math.max(0, Math.min(part.points, g.earned || 0));
+                    totalEarned += earned;
+                    if (part.points > 0) recordDailyAttempt(Math.round((earned / part.points) * 10));
+                }
+                m.totalEarned = totalEarned;
+                m.status = 'graded';
+
+                if (!examMeta.mockExamHistory) examMeta.mockExamHistory = [];
+                examMeta.mockExamHistory.push({
+                    id: m.id,
+                    title: m.title,
+                    takenAt: new Date().toISOString(),
+                    totalEarned,
+                    totalPoints: m.totalPoints,
+                    problems: m.problems,
+                    answers: m.answers,
+                    grades: m.grades
+                });
+                saveData();
+                updateProgressStats();
+                renderMockExamGraded();
+            } catch (err) {
+                console.error('mock grading error:', err);
+                document.getElementById('mockExamBody').innerHTML = `
+                    <h2 style="margin-top: 0;">Grading failed</h2>
+                    <p style="color: #ef4444;">${escapeHtml(err.message || String(err))}</p>
+                    <div class="modal-actions"><button class="btn-primary" onclick="closeMockExamModal()">Close</button></div>
+                `;
+            }
+        }
+
+        function renderMockExamGraded() {
+            const m = mockExamSession;
+            if (!m) return;
+            const pct = m.totalPoints > 0 ? (m.totalEarned / m.totalPoints * 100) : 0;
+            const ratingCls = pct >= 80 ? 'good' : pct >= 60 ? 'fair' : 'weak';
+
+            const partsHtml = m.problems.map(p => `
+                <div class="mock-problem">
+                    <div class="mock-problem-header"><h3>Problem ${p.number}: ${escapeHtml(p.title || '')}</h3></div>
+                    ${(p.parts || []).map(part => {
+                        const key = `${p.number}-${part.letter}`;
+                        const g = m.grades[key] || {};
+                        const earned = g.earned || 0;
+                        const ratio = part.points > 0 ? earned / part.points : 0;
+                        const rc = ratio >= 0.8 ? 'good' : ratio >= 0.5 ? 'fair' : 'weak';
+                        const ans = m.answers[key] || '(blank)';
+                        return `
+                            <div class="mock-part graded">
+                                <div class="mock-part-prompt"><strong>${escapeHtml(part.letter)})</strong> ${renderMarkdown(part.prompt || '')}</div>
+                                <div class="mock-grade-row">
+                                    <span class="rating-score-small rating-${rc}">${earned}/${part.points}</span>
+                                    <span style="color: #4b5563; font-size: 13px;">${escapeHtml(g.feedback || '')}</span>
+                                </div>
+                                <details class="mock-answer-details">
+                                    <summary>Your answer</summary>
+                                    <pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${escapeHtml(ans)}</pre>
+                                </details>
+                                ${(g.missed && g.missed.length) ? `<div style="margin-top: 8px; font-size: 13px;"><strong>Missed:</strong><ul>${g.missed.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `).join('');
+
+            document.getElementById('mockExamBody').innerHTML = `
+                <div class="mock-exam-toolbar">
+                    <h2 style="margin: 0;">${escapeHtml(m.title)} — Graded</h2>
+                    <div class="mock-total rating-${ratingCls}">${m.totalEarned}/${m.totalPoints} (${pct.toFixed(1)}%)</div>
+                    <button class="btn-secondary" onclick="closeMockExamModal()">Close</button>
+                </div>
+                <div class="mock-exam-body">${partsHtml}</div>
+            `;
+        }
+
         // Initialize
         (async () => {
             applySidebarState();
             await loadData();
             renderPlatformOverview();
             document.getElementById('uploadBtn').addEventListener('click', openUploadModal);
+
+            // Show home dashboard by default (no resource selected on load)
+            if (!currentResource) {
+                renderHomeDashboard();
+            }
+
+            // Background work: build the exam taxonomy if missing, then
+            // backfill importance for any unassessed notes/exercises.
+            // Errors here are non-fatal; the app stays usable.
+            (async () => {
+                try {
+                    if (!examMeta || examMeta.version !== EXAM_TAXONOMY_VERSION || !examMeta.topics) {
+                        await extractExamTaxonomy();
+                        if (viewMode === 'home') renderHomeDashboard();
+                    }
+                    await runImportanceBackfill();
+                } catch (err) {
+                    console.warn('Background exam-prep work failed:', err);
+                }
+            })();
         })();
     </script>
 </body>
