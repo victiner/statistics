@@ -2741,6 +2741,109 @@
             flex-wrap: wrap;
         }
 
+        /* User items inline under each exam-topic row */
+        .exam-row-items {
+            width: 100%;
+            margin-top: 8px;
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 8px;
+        }
+        .exam-row-items summary {
+            cursor: pointer;
+            font-size: 12px;
+            color: #4b5563;
+            font-weight: 600;
+            padding: 4px 0;
+            list-style: none;
+            user-select: none;
+        }
+        .exam-row-items summary::marker { display: none; }
+        .exam-row-items summary::before {
+            content: '▸ ';
+            color: #9ca3af;
+            transition: transform 0.15s;
+            display: inline-block;
+        }
+        .exam-row-items[open] summary::before {
+            content: '▾ ';
+        }
+        .exam-row-items-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .exam-item-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 10px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 13px;
+        }
+        .exam-item-row:hover {
+            border-color: #818cf8;
+            background: #f5f3ff;
+            transform: translateX(2px);
+        }
+        .exam-item-row.unanswered {
+            border-left: 3px solid #f59e0b;
+        }
+        .exam-item-row.answered {
+            border-left: 3px solid #10b981;
+        }
+        .exam-item-kind {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .exam-item-kind.kind-note {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .exam-item-kind.kind-exercise {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+        .exam-item-kind.kind-question {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        .exam-item-title {
+            color: #1f2937;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .exam-item-status {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .exam-item-status.rating-weak {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+        .exam-item-status.rating-fair {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .exam-item-status.rating-good {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
         /* Past exam questions page rows */
         .home-row.past-q-row {
             cursor: pointer;
@@ -8894,17 +8997,30 @@ ${isPaper ? '' : 'STRIP Sensor guide rubric lines.'} The "figures" array stays e
             }
         }
 
+        // Try PDF first (vision-rich). If that fails (404, render error, empty
+        // result), fall back to TXT. This way a missing/un-deployed PDF doesn't
+        // kill the entire side — we still get the text-only structure.
+        async function extractSide(source, isPaper) {
+            const pdfPath = isPaper ? source.paperPdf : source.solPdf;
+            const txtPath = isPaper ? source.paperTxt : source.solTxt;
+            if (pdfPath) {
+                const p = await extractFromPdf(source, pdfPath, isPaper);
+                if (p.length > 0) return p;
+                if (txtPath) {
+                    console.warn(`PDF extraction empty for ${pdfPath}; falling back to ${txtPath}`);
+                }
+            }
+            if (txtPath) return await extractFromTxt(source, txtPath, isPaper);
+            return [];
+        }
+
         // Per-exam orchestration: extract paper + solution sides (PDF preferred,
         // TXT fallback), then merge the two by (problemNumber, partLetter).
         async function extractOneExamStructure(source) {
             // Paper + sol run in parallel — different API calls don't block each other
             const [paperProblems, solProblems] = await Promise.all([
-                source.paperPdf
-                    ? extractFromPdf(source, source.paperPdf, true)
-                    : (source.paperTxt ? extractFromTxt(source, source.paperTxt, true) : Promise.resolve([])),
-                source.solPdf
-                    ? extractFromPdf(source, source.solPdf, false)
-                    : (source.solTxt ? extractFromTxt(source, source.solTxt, false) : Promise.resolve([]))
+                extractSide(source, true),
+                extractSide(source, false)
             ]);
 
             if (paperProblems.length === 0 && solProblems.length === 0) {
@@ -9503,33 +9619,103 @@ Return ONLY this JSON (no markdown fences):
             if (!examMeta || !examMeta.topics) return [];
             const stats = {};
             for (const t of examMeta.topics) {
-                stats[t.id] = { topic: t, hits: 0, attempts: 0, totalRating: 0, ratedCount: 0, linkedPastQs: new Set() };
+                stats[t.id] = {
+                    topic: t, hits: 0, attempts: 0, totalRating: 0, ratedCount: 0,
+                    linkedPastQs: new Set(),
+                    userItems: [] // [{ kind, resourceId, itemId, title, importanceLevel, latestRating, answered, attemptCount }]
+                };
             }
+
+            // Pre-build inheritance maps so questions can pick up their parent
+            // note/exercise's exam-topic tagging (questions aren't assessed
+            // directly — too many of them — so they ride on the parent).
+            const parentTopics = new Map(); // 'note:<id>' / 'ex:<id>' → [topicIds]
             for (const r of resources) {
-                const tag = (item, attempts) => {
-                    const tags = item?.importance?.examTopics || [];
+                for (const n of (r.studyNotes || [])) {
+                    if (n.importance?.examTopics?.length) parentTopics.set(`note:${n.id}`, n.importance.examTopics);
+                }
+                for (const ex of (r.exercises || [])) {
+                    if (ex.importance?.examTopics?.length) parentTopics.set(`ex:${ex.id}`, ex.importance.examTopics);
+                }
+            }
+            // Fuzzy match by topicName as a last resort when a question has no
+            // explicit parent (slide-generated questions).
+            const topicNameToId = {};
+            for (const t of examMeta.topics) topicNameToId[(t.name || '').toLowerCase()] = t.id;
+
+            const truncate = (s, n) => {
+                const str = String(s || '');
+                return str.length > n ? str.slice(0, n).trimEnd() + '…' : str;
+            };
+
+            for (const r of resources) {
+                const tag = (kind, item, attempts, overrideTopicIds) => {
+                    const tags = overrideTopicIds || item?.importance?.examTopics || [];
+                    if (tags.length === 0) return;
+                    const attemptList = attempts || [];
+                    const latest = attemptList[attemptList.length - 1];
+                    const latestRating = latest?.feedback?.rating ?? null;
+                    const title = kind === 'question'
+                        ? truncate(item.question, 90)
+                        : (item.topic || 'Untitled');
                     for (const tId of tags) {
                         if (!stats[tId]) continue;
                         stats[tId].hits += 1;
-                        for (const a of (attempts || [])) {
+                        for (const a of attemptList) {
                             stats[tId].attempts += 1;
                             if (a.feedback && typeof a.feedback.rating === 'number') {
                                 stats[tId].totalRating += a.feedback.rating;
                                 stats[tId].ratedCount += 1;
                             }
                         }
+                        stats[tId].userItems.push({
+                            kind, resourceId: r.id, itemId: item.id,
+                            title,
+                            resourceTitle: r.title || 'Resource',
+                            importanceLevel: item.importance?.level,
+                            latestRating,
+                            answered: attemptList.length > 0,
+                            attemptCount: attemptList.length,
+                            level: item.level,    // questions only
+                            qType: item.type      // questions only ("basics" / "conceptual" / "calculation" / "code")
+                        });
                     }
                     // Also collect linked past Qs so we can show "user has practiced this past Q"
                     for (const qid of (item?.importance?.linkedQuestionIds || [])) {
-                        // Find topic(s) that include this qid and credit them
                         for (const tId of Object.keys(stats)) {
                             const linked = stats[tId].topic.linkedQuestionIds || [];
                             if (linked.includes(qid)) stats[tId].linkedPastQs.add(qid);
                         }
                     }
                 };
-                for (const n of (r.studyNotes || [])) tag(n, []);
-                for (const ex of (r.exercises || [])) tag(ex, ex.attempts);
+                for (const n of (r.studyNotes || [])) tag('note', n, []);
+                for (const ex of (r.exercises || [])) tag('exercise', ex, ex.attempts);
+                // Questions inherit their parent's tagging, with topicName as fallback.
+                for (const q of (r.questions || [])) {
+                    let topicIds;
+                    if (q.fromStudyNote) topicIds = parentTopics.get(`note:${q.fromStudyNote}`);
+                    else if (q.fromExercise) topicIds = parentTopics.get(`ex:${q.fromExercise}`);
+                    if ((!topicIds || topicIds.length === 0) && q.topicName) {
+                        const id = topicNameToId[q.topicName.toLowerCase()];
+                        if (id) topicIds = [id];
+                    }
+                    if (topicIds && topicIds.length > 0) {
+                        tag('question', q, q.attempts, topicIds);
+                    }
+                }
+            }
+            // Sort each topic's userItems: unanswered first, then weak-rated, then good-rated.
+            // Within equal-status items, prefer exercises > notes > questions so
+            // the user sees their hand-curated material before auto-generated drills.
+            const kindRank = { exercise: 0, note: 1, question: 2 };
+            for (const s of Object.values(stats)) {
+                s.userItems.sort((a, b) => {
+                    if (a.answered !== b.answered) return a.answered ? 1 : -1;
+                    const ar = a.latestRating ?? 11;
+                    const br = b.latestRating ?? 11;
+                    if (ar !== br) return ar - br;
+                    return (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
+                });
             }
             const freqRank = { 'very-high': 4, high: 3, medium: 2, low: 1 };
             return Object.values(stats).sort((a, b) => {
@@ -9539,6 +9725,40 @@ Return ONLY this JSON (no markdown fences):
                 if (aF !== bF) return bF - aF;
                 return b.attempts - a.attempts;
             });
+        }
+
+        // Teleport from the dashboard to a specific user item. Sets up the
+        // correct view (resource + matching tab), scrolls to it, and auto-opens
+        // the answer modal so the user can answer immediately.
+        function goToItem(kind, resourceId, itemId) {
+            const resource = resources.find(r => r.id == resourceId);
+            if (!resource) { alert('Resource not found.'); return; }
+
+            if (kind === 'question') {
+                // Switch to the source tab the question came from, then open
+                // its answer modal directly — no scrolling needed since the
+                // modal is centered and contains the full prompt.
+                const q = (resource.questions || []).find(qq => qq.id == itemId);
+                questionSource =
+                    q?.source === 'notes'    ? 'notes'
+                  : q?.source === 'exercise' ? 'exercises'
+                  : q?.source === 'exam'     ? 'exams'
+                  :                            'slides';
+                // currentResource must be set so openAnswerModal can find the question
+                currentResource = resource;
+                selectResource(resourceId);
+                setTimeout(() => openAnswerModal(itemId), 150);
+                return;
+            }
+
+            questionSource = kind === 'exercise' ? 'exercises' : 'notes';
+            selectResource(resourceId);
+            setTimeout(() => {
+                const elId = kind === 'exercise' ? `exercise-${itemId}` : `study-note-${itemId}`;
+                const el = document.getElementById(elId);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (kind === 'exercise') openExerciseAnswerModal(itemId);
+            }, 150);
         }
 
         function countAllAttempts() {
@@ -9631,9 +9851,10 @@ Return ONLY this JSON (no markdown fences):
                     const status = s.hits === 0 ? 'uncovered' : (s.attempts > 0 ? 'practiced' : 'noted');
                     const allLinked = s.topic.linkedQuestionIds || [];
                     const practicedLinked = s.linkedPastQs.size;
+                    const unansweredCount = s.userItems.filter(it => !it.answered).length;
                     const statusMeta = s.hits === 0
                         ? 'Not linked yet'
-                        : `${s.hits} items · ${s.attempts} answered`;
+                        : `${s.hits} items · ${s.attempts} answered${unansweredCount > 0 ? ` · ${unansweredCount} unanswered` : ''}`;
                     const pastQsLine = allLinked.length > 0
                         ? `<div class="home-row-pastqs">${practicedLinked}/${allLinked.length} past Qs touched · ${allLinked.slice(0, 4).map(qid => {
                             const ref = examQuestionRef(qid);
@@ -9643,6 +9864,32 @@ Return ONLY this JSON (no markdown fences):
                                 : '';
                         }).join('')}</div>`
                         : '';
+                    // Inline list of THIS user's items tagged to this topic. Click → teleport + auto-open answer modal for exercises.
+                    const itemsHtml = s.userItems.length === 0 ? '' : `
+                        <details class="exam-row-items" ${unansweredCount > 0 ? 'open' : ''}>
+                            <summary>${s.userItems.length} of your items${unansweredCount > 0 ? ` — ${unansweredCount} to answer` : ''}</summary>
+                            <div class="exam-row-items-body">
+                                ${s.userItems.map(it => {
+                                    const ratingTxt = it.latestRating != null ? `${it.latestRating}/10` : (it.answered ? 'answered' : 'answer →');
+                                    const rcls = it.latestRating == null
+                                        ? (it.answered ? 'fair' : 'weak')
+                                        : (it.latestRating >= 8 ? 'good' : it.latestRating >= 6 ? 'fair' : 'weak');
+                                    const kindLabel =
+                                          it.kind === 'note'     ? 'Note'
+                                        : it.kind === 'exercise' ? 'Exercise'
+                                        : it.kind === 'question' ? (it.qType ? `Q · ${it.qType}` : 'Question')
+                                        :                          it.kind;
+                                    return `
+                                        <div class="exam-item-row ${it.answered ? 'answered' : 'unanswered'}" onclick="goToItem('${it.kind}', ${it.resourceId}, ${it.itemId})">
+                                            <span class="exam-item-kind kind-${it.kind}">${kindLabel}</span>
+                                            <span class="exam-item-title">${escapeHtml(it.title)}</span>
+                                            <span class="exam-item-status rating-${rcls}">${ratingTxt}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </details>
+                    `;
                     return `
                         <div class="home-row exam-row ${status}">
                             <div class="home-row-name">
@@ -9651,6 +9898,7 @@ Return ONLY this JSON (no markdown fences):
                                 ${s.topic.criticalForRetake ? '<span class="freq-pill freq-critical">critical</span>' : ''}
                                 ${s.topic.pythonHeavy ? '<span class="freq-pill freq-code">Python</span>' : ''}
                                 ${pastQsLine}
+                                ${itemsHtml}
                             </div>
                             <div class="home-row-meta">${statusMeta}</div>
                             <div class="home-row-score rating-${rc}">${avgStr}</div>
