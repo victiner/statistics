@@ -1592,6 +1592,30 @@
             font-size: 12px;
             font-weight: 700;
         }
+        .topic-action-btn {
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            line-height: 20px;
+            text-align: center;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.15s;
+        }
+        .topic-action-btn:hover {
+            color: #4b5563;
+            border-color: #d1d5db;
+            background: #f3f4f6;
+        }
+        .topic-action-btn-danger:hover {
+            color: #dc2626;
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
 
         .dropdown-arrow {
             color: #9ca3af;
@@ -1945,6 +1969,34 @@
             font-weight: 600;
             color: #9ca3af;
             min-height: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .sync-indicator.alert {
+            background: #fef2f2;
+            color: #b91c1c !important;
+            font-size: 12px;
+            padding: 4px 8px;
+            border: 1px solid #fecaca;
+            animation: syncPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes syncPulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.55; }
+        }
+
+        .backup-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .backup-row .backup-btn {
+            margin-top: 0;
+            font-size: 12px;
+            padding: 8px 10px;
+            text-align: center;
         }
 
         /* All Notes entry button */
@@ -2670,6 +2722,17 @@
             border-color: #38bdf8;
             color: #075985;
         }
+        .exam-relevance-badge.supporting {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .erb-angle {
+            font-style: italic;
+            font-size: 11px;
+            opacity: 0.92;
+        }
         .erb-divider {
             display: inline-block;
             width: 1px;
@@ -3200,6 +3263,13 @@
                 <button class="upload-btn home-btn" onclick="renderHomeDashboard()">Dashboard</button>
                 <button class="upload-btn" id="uploadBtn">Upload Resource</button>
                 <button class="all-notes-btn" onclick="showAllNotesPage()">All Notes &amp; Flash Cards</button>
+                <div class="backup-row">
+                    <button class="all-notes-btn backup-btn" onclick="exportBackup()" title="Download a single .json file containing everything: notes, exercises, questions, topics, PDFs, screenshots, progress. Save it to iCloud / Google Drive / etc.">Download Backup</button>
+                    <label class="all-notes-btn backup-btn" title="Replace current data with a previously downloaded backup file" style="cursor: pointer;">
+                        Restore Backup
+                        <input type="file" accept="application/json,.json" onchange="importBackup(this.files[0]); this.value='';" style="display: none;">
+                    </label>
+                </div>
             </div>
 
             <div class="resources-list" id="resourcesList">
@@ -3470,7 +3540,16 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
         let db = null;
         let cloudSyncStatus = 'idle'; // 'idle' | 'syncing' | 'ok' | 'error' | 'offline'
         let cloudSaveTimer = null;
-        let cloudSavePending = false;
+        let cloudSaveInFlight = false;  // a POST is currently mid-flight
+        let cloudRetryTimer = null;     // backoff timer for retry after failure
+        let cloudRetryDelay = 2000;     // grows with consecutive failures
+        // Generation counter: every saveData bumps `cloudDirtyGen`. The number stored
+        // in `cloudSavedGen` after a successful POST records exactly which snapshot
+        // was saved. If `cloudDirtyGen > cloudSavedGen`, there are edits that haven't
+        // made it to the cloud yet — that's the single source of truth for "pending".
+        let cloudDirtyGen = 0;
+        let cloudSavedGen = 0;
+        function cloudSavePending() { return cloudDirtyGen > cloudSavedGen; }
 
         function buildSyncPayload() {
             const stripped = resources.map(r => {
@@ -3509,9 +3588,12 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
         }
 
         async function cloudSaveNow() {
+            if (cloudSaveInFlight) return; // already running; finally-block will re-trigger if needed
+            cloudSaveInFlight = true;
+            cloudSyncStatus = 'syncing';
+            updateSyncIndicator();
+            const attemptedGen = cloudDirtyGen;
             try {
-                cloudSyncStatus = 'syncing';
-                updateSyncIndicator();
                 const payload = buildSyncPayload();
                 const res = await fetch('/api/sync', {
                     method: 'POST',
@@ -3520,33 +3602,68 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 cloudSyncStatus = 'ok';
+                cloudSavedGen = attemptedGen; // exactly this snapshot is now durably saved
+                cloudRetryDelay = 2000;
+                if (cloudRetryTimer) { clearTimeout(cloudRetryTimer); cloudRetryTimer = null; }
             } catch (err) {
                 console.warn('cloudSave failed:', err);
                 cloudSyncStatus = 'error';
+                // cloudSavedGen unchanged → cloudSavePending() stays true → retry & beacon still fire.
+                scheduleCloudRetry();
+            } finally {
+                cloudSaveInFlight = false;
+                updateSyncIndicator();
+                // If more edits arrived during the save (or it failed and we still have pending work),
+                // schedule another attempt.
+                if (cloudSavePending() && !cloudSaveTimer && !cloudRetryTimer) {
+                    cloudSaveTimer = setTimeout(() => {
+                        cloudSaveTimer = null;
+                        cloudSaveNow();
+                    }, 200);
+                }
             }
-            updateSyncIndicator();
+        }
+
+        function scheduleCloudRetry() {
+            if (cloudRetryTimer) return;
+            const delay = Math.min(cloudRetryDelay, 60000);
+            cloudRetryDelay = Math.min(cloudRetryDelay * 2, 60000);
+            cloudRetryTimer = setTimeout(() => {
+                cloudRetryTimer = null;
+                if (cloudSavePending() && !cloudSaveInFlight) cloudSaveNow();
+            }, delay);
         }
 
         function scheduleCloudSave() {
-            cloudSavePending = true;
+            cloudDirtyGen++;
+            updateSyncIndicator();
             if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
-            cloudSaveTimer = setTimeout(() => {
-                cloudSavePending = false;
+            cloudSaveTimer = setTimeout(function tryRun() {
+                cloudSaveTimer = null;
+                if (cloudSaveInFlight) {
+                    // a save is already running — let its finally-block re-trigger
+                    return;
+                }
                 cloudSaveNow();
             }, 800);
         }
 
-        // Synchronously flush a pending cloud save when the page is being unloaded
+        // Synchronously flush any pending cloud save when the page is being unloaded
         // or backgrounded. Uses sendBeacon because regular fetch is cancelled mid-flight
         // when the tab closes — that was the path through which a refresh within ~1s of
         // the last edit silently dropped the last batch of notes/exercises.
+        //
+        // We fire the beacon whenever there's pending work OR an in-flight POST that
+        // could be cancelled by the tab closing. That covers the window where the 800ms
+        // debounce just fired but the fetch hasn't resolved yet.
         function flushCloudSaveSync() {
             if (cloudSaveTimer) { clearTimeout(cloudSaveTimer); cloudSaveTimer = null; }
-            if (!cloudSavePending) return;
-            cloudSavePending = false;
+            if (!cloudSavePending() && !cloudSaveInFlight) return;
             try {
+                const snapshotGen = cloudDirtyGen;
                 const blob = new Blob([JSON.stringify(buildSyncPayload())], { type: 'application/json' });
-                navigator.sendBeacon('/api/sync', blob);
+                const sent = navigator.sendBeacon('/api/sync', blob);
+                if (sent) cloudSavedGen = snapshotGen;
             } catch (err) {
                 console.warn('flushCloudSaveSync failed:', err);
             }
@@ -3555,20 +3672,168 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') flushCloudSaveSync();
         });
+        // Last-resort guard: warn before navigating away if there's still unsaved work.
+        // Browsers show a generic "leave site?" prompt — they ignore custom messages.
+        window.addEventListener('beforeunload', (e) => {
+            if (cloudSavePending() || cloudSaveInFlight) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        });
+        // When the network comes back, immediately try to flush any queued save instead
+        // of waiting out the backoff timer.
+        window.addEventListener('online', () => {
+            if (cloudRetryTimer) { clearTimeout(cloudRetryTimer); cloudRetryTimer = null; }
+            cloudRetryDelay = 2000;
+            if (cloudSavePending() && !cloudSaveInFlight) cloudSaveNow();
+        });
+
+        // ─── Full backup / restore ────────────────────────────────────────────────
+        // Produces a single self-contained .json file the user can save anywhere
+        // (iCloud, external drive, etc). Includes EVERY IndexedDB store:
+        //   - meta      (appData: resources w/o PDFs, notes, topics, examMeta, progress)
+        //   - pdfs      (full base64 PDF binaries keyed by resource id)
+        //   - attachments (pasted screenshots that fell back to local storage)
+        // Restoring wipes the current IDB stores and reloads.
+        const BACKUP_FORMAT_VERSION = 1;
+
+        function readEntireStore(d, storeName) {
+            return new Promise((resolve, reject) => {
+                const out = {};
+                const tx = d.transaction(storeName, 'readonly');
+                const req = tx.objectStore(storeName).openCursor();
+                req.onsuccess = e => {
+                    const cur = e.target.result;
+                    if (cur) { out[String(cur.key)] = cur.value; cur.continue(); }
+                    else { resolve(out); }
+                };
+                req.onerror = e => reject(e.target.error);
+            });
+        }
+
+        function clearAndFillStore(d, storeName, entries, keyType) {
+            return new Promise((resolve, reject) => {
+                const tx = d.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                store.clear();
+                for (const [k, v] of Object.entries(entries || {})) {
+                    const key = keyType === 'number' ? Number(k) : k;
+                    store.put(v, key);
+                }
+                tx.oncomplete = () => resolve();
+                tx.onerror = e => reject(e.target.error);
+            });
+        }
+
+        async function exportBackup() {
+            try {
+                // Flush any pending in-memory edits into IDB before snapshotting.
+                await saveData();
+
+                const d = await openDB();
+                const [meta, pdfs, attachments] = await Promise.all([
+                    readEntireStore(d, 'meta'),
+                    readEntireStore(d, 'pdfs'),
+                    readEntireStore(d, 'attachments'),
+                ]);
+
+                const backup = {
+                    formatVersion: BACKUP_FORMAT_VERSION,
+                    app: 'Statistics Study Platform',
+                    exportedAt: new Date().toISOString(),
+                    counts: {
+                        resources: (meta.appData?.resources || []).length,
+                        notes: (meta.appData?.notes || []).length,
+                        pdfs: Object.keys(pdfs).length,
+                        attachments: Object.keys(attachments).length,
+                    },
+                    stores: { meta, pdfs, attachments },
+                };
+
+                const json = JSON.stringify(backup);
+                const sizeMB = (json.length / 1024 / 1024).toFixed(1);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                a.href = url;
+                a.download = `study-backup-${stamp}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                // Defer revoke so Safari/Firefox actually trigger the download
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+                const c = backup.counts;
+                console.log(`Backup exported (${sizeMB} MB): ${c.resources} resources · ${c.notes} notes · ${c.pdfs} PDFs · ${c.attachments} screenshots`);
+            } catch (err) {
+                console.error('exportBackup failed:', err);
+                alert('Backup failed: ' + (err?.message || err));
+            }
+        }
+
+        async function importBackup(file) {
+            if (!file) return;
+            try {
+                const text = await file.text();
+                let backup;
+                try { backup = JSON.parse(text); }
+                catch (e) { throw new Error('File is not valid JSON.'); }
+
+                if (!backup || backup.app !== 'Statistics Study Platform' || !backup.stores?.meta) {
+                    throw new Error('This file does not look like a Statistics Study Platform backup.');
+                }
+
+                const c = backup.counts || {};
+                const summary = `This will REPLACE all current data with the backup.\n\nBackup taken: ${backup.exportedAt || 'unknown'}\nContains:\n  · ${c.resources ?? '?'} resources\n  · ${c.notes ?? '?'} notes\n  · ${c.pdfs ?? '?'} PDFs\n  · ${c.attachments ?? '?'} screenshots\n\nContinue?`;
+                if (!confirm(summary)) return;
+
+                // Bump updatedAt so this restored snapshot beats whatever is in cloud
+                // on the next load — otherwise loadData would re-apply a newer cloud
+                // copy and wipe the restore.
+                const metaToWrite = JSON.parse(JSON.stringify(backup.stores.meta || {}));
+                if (metaToWrite.appData) {
+                    metaToWrite.appData.updatedAt = new Date().toISOString();
+                }
+
+                const d = await openDB();
+                await clearAndFillStore(d, 'meta',        metaToWrite,                'string');
+                await clearAndFillStore(d, 'pdfs',        backup.stores.pdfs,        'number');
+                await clearAndFillStore(d, 'attachments', backup.stores.attachments, 'string');
+
+                // Reload so the app reads fresh state from IDB AND re-pushes to cloud
+                // through the normal load → save path.
+                alert('Backup restored. Reloading…');
+                location.reload();
+            } catch (err) {
+                console.error('importBackup failed:', err);
+                alert('Restore failed: ' + (err?.message || err));
+            }
+        }
 
         function updateSyncIndicator() {
             const el = document.getElementById('syncIndicator');
             if (!el) return;
             const map = {
-                idle:    { text: '',             color: '#9ca3af' },
-                syncing: { text: 'Syncing…',     color: '#f59e0b' },
-                ok:      { text: 'Synced',       color: '#10b981' },
-                error:   { text: 'Sync error',   color: '#ef4444' },
-                offline: { text: 'Offline',      color: '#9ca3af' }
+                idle:    { text: '',                              color: '#9ca3af', alert: false },
+                syncing: { text: 'Syncing…',                      color: '#f59e0b', alert: false },
+                ok:      { text: 'Synced',                        color: '#10b981', alert: false },
+                error:   { text: '⚠ Sync FAILED — do NOT close',  color: '#b91c1c', alert: true  },
+                offline: { text: '⚠ Offline — changes not saved', color: '#b91c1c', alert: true  }
             };
-            const s = map[cloudSyncStatus] || map.idle;
+            let s = map[cloudSyncStatus] || map.idle;
+            // If we're "ok" but have queued writes, signal that there's still work pending
+            // so the user doesn't close the tab thinking it's all saved.
+            if (cloudSyncStatus === 'ok' && (cloudSavePending() || cloudSaveInFlight)) {
+                s = { text: 'Saving…', color: '#f59e0b', alert: false };
+            }
             el.textContent = s.text;
             el.style.color = s.color;
+            el.classList.toggle('alert', !!s.alert);
+            el.title = s.alert
+                ? 'Cloud sync is failing. Your latest edits are only in this browser. Keep this tab open until the indicator turns green.'
+                : '';
         }
 
         // Merge cloud data into local state. Cloud is authoritative for the fields
@@ -6668,7 +6933,7 @@ Return ONLY JSON (no markdown):
             const note = currentResource.studyNotes.find(n => n.id == noteId);
             if (!note) return;
 
-            const topicName = note.topic;
+            const topicHint = note.topic || '';
             const noteContent = note.body;
 
             const loadingDiv = document.createElement('div');
@@ -6676,33 +6941,45 @@ Return ONLY JSON (no markdown):
             loadingDiv.innerHTML = '<div style="text-align: center;"><div class="loading" style="margin: 0 auto 12px;"></div><div>Generating questions from note...</div></div>';
             document.body.appendChild(loadingDiv);
 
-            const progressContext = buildTopicProgressPrompt(currentResource, topicName);
+            // Progress context uses the hint, since we don't know the final topic yet.
+            const progressContext = topicHint ? buildTopicProgressPrompt(currentResource, topicHint) : '';
+            const existingTopicNames = Object.keys(topics);
 
             try {
-                const promptText = `You are a statistics educator preparing a student for the NHH TECH3 retake exam. A student has notes on "${topicName}". Generate study questions that target their gaps, in the TECH3 exam style.
+                const promptText = `You are a statistics educator preparing a student for the NHH TECH3 retake exam. A student has study notes. Generate questions in the TECH3 exam style.
 
 ${TECH3_EXAM_STYLE}
 
-STUDENT'S NOTES:
+STUDENT'S NOTES${topicHint ? ` (working title: "${topicHint}")` : ''}:
 {{NOTE_0}}
 ${progressContext}
 
+${existingTopicNames.length > 0 ? `EXISTING TOPIC NAMES (reuse one of these EXACTLY if the concept matches, instead of creating a new topic):\n${existingTopicNames.map(t => `- ${t}`).join('\n')}\n` : ''}
+
 If the notes contain [Screenshot N] markers, the actual screenshot images are attached above — use what you see in them as part of the notes.
 
-Based on the progress above:
+Based on the progress above (if any):
 - If UNCOVERED: generate questions to fill those gaps
 - If WEAK: target the specific gaps listed — drill those weak areas
 - If MASTERED: generate from a completely DIFFERENT angle
 - If no progress yet: generate a balanced set
 
-Generate:
+Generate in the TECH3 exam style (real-world story with a named entity, linked subparts, explicit hypotheses, in-context interpretation, code-heavy for code-type questions):
 - 1-2 Level 1 basics ("What is X?", "Why do we use X?")
 - 1 Level 2 conceptual (deep understanding)
 - 1 Level 2 calculation (specific numbers)
-- 1 Level 2 code (Python task — write working code, not just describe)
+- 1 Level 2 code (Python task — write 10-30 lines of working code, not a description)
 
-Return ONLY JSON (no markdown):
-{ "questions": [{ "level": 1|2, "type": "basics"|"conceptual"|"calculation"|"code", "question": "..." }] }`;
+Return ONLY JSON (no markdown). Pick the topicName CAREFULLY:
+- 3-6 word CONCEPT name (e.g. "Bayes' theorem", "Linear regression assumptions")
+- NEVER a question (no "?")
+- NEVER a resource/module title
+- If one of the EXISTING TOPIC NAMES fits, reuse it exactly so questions consolidate under one topic
+
+{
+  "topicName": "<clean 3-6 word concept name>",
+  "questions": [{ "level": 1|2, "type": "basics"|"conceptual"|"calculation"|"code", "question": "..." }]
+}`;
 
                 const response = await fetch("/api/proxy", {
                     method: "POST",
@@ -6720,6 +6997,10 @@ Return ONLY JSON (no markdown):
                 }
                 const text = data.content.map(i => i.text || "").join("\n").trim();
                 const result = JSON.parse(text.replace(/```json|```/g, "").trim());
+
+                const topicName = (result.topicName && !result.topicName.includes('?'))
+                    ? result.topicName.trim()
+                    : (topicHint && !topicHint.includes('?') ? topicHint : 'Notes Topic');
 
                 if (!topics[topicName]) {
                     topics[topicName] = { resourceId: currentResource.id, questions: [], history: [] };
@@ -8129,17 +8410,22 @@ Be encouraging but honest. Focus on understanding, not perfection.`;
                 const resource = resources.find(r => r.id === data.resourceId);
                 const chapterName = resource?.chapter || resource?.title || 'Unknown';
 
+                const escName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 return `
                     <div class="topic-dropdown">
                         <div class="topic-dropdown-header" onclick="toggleTopicDropdown(${index})">
                             <div class="topic-dropdown-title">
-                                <span class="topic-name-text">${name}</span>
-                                <span class="topic-rating-badge">${overallAvg}/10</span>
+                                <span class="topic-name-text">${escapeHtml(name)}</span>
+                                <span style="display: flex; gap: 4px; align-items: center;">
+                                    <span class="topic-rating-badge">${overallAvg}/10</span>
+                                    <button class="topic-action-btn" onclick="event.stopPropagation(); renameTopic('${escName}')" title="Rename topic">✎</button>
+                                    <button class="topic-action-btn topic-action-btn-danger" onclick="event.stopPropagation(); deleteTopic('${escName}')" title="Delete topic + its questions">×</button>
+                                </span>
                             </div>
                             <span class="dropdown-arrow" id="arrow-${index}">▼</span>
                         </div>
                         <div class="topic-dropdown-content" id="topic-content-${index}">
-                            <div class="topic-meta">Chapter: ${chapterName}</div>
+                            <div class="topic-meta">Chapter: ${escapeHtml(chapterName)}</div>
                             <div class="topic-stats-grid">
                                 <div class="topic-stat-item">
                                     <div class="topic-stat-label">L1 Basics Mastered</div>
@@ -8162,6 +8448,61 @@ Be encouraging but honest. Focus on understanding, not perfection.`;
                     </div>
                 `;
             }).join('');
+        }
+
+        // Delete a topic + its associated questions across all resources.
+        // Used to clean up the weird auto-generated topic names like
+        // "What are basic probability rules?" or resource titles that ended up
+        // as topic entries before the prompt fix landed.
+        function deleteTopic(name) {
+            const data = topics[name];
+            if (!data) { alert('Topic not found: ' + name); return; }
+            const qCount = (data.questions || []).length;
+            const hCount = (data.history || []).length;
+            if (!confirm(`Delete topic "${name}"?\n\nThis removes:\n  · ${qCount} question(s)\n  · ${hCount} answer-history entr${hCount === 1 ? 'y' : 'ies'}\n\nNotes and exercises are NOT deleted — only the topic grouping and its auto-generated questions.`)) return;
+
+            for (const r of resources) {
+                if (!r.questions) continue;
+                r.questions = r.questions.filter(q => q.topicName !== name);
+            }
+            delete topics[name];
+
+            // Recompute totals so stats stay accurate after the removal.
+            progressData.totalQuestions = resources.reduce((s, r) => s + (r.questions?.length || 0), 0);
+            progressData.answeredQuestions = resources.reduce((s, r) =>
+                s + (r.questions?.filter(q => q.attempts?.length > 0).length || 0), 0);
+
+            saveData();
+            if (currentResource) renderResourceContent();
+            renderPlatformOverview();
+            updateProgressStats();
+        }
+
+        // Rename a topic — merges into an existing topic if the new name already exists.
+        function renameTopic(name) {
+            const data = topics[name];
+            if (!data) return;
+            const newName = prompt(`Rename topic "${name}" to:`, name);
+            if (newName === null) return;
+            const clean = newName.trim();
+            if (!clean || clean === name) return;
+
+            if (topics[clean]) {
+                if (!confirm(`Topic "${clean}" already exists. Merge "${name}" into it?`)) return;
+                topics[clean].questions.push(...(data.questions || []));
+                topics[clean].history.push(...(data.history || []));
+            } else {
+                topics[clean] = data;
+            }
+            for (const r of resources) {
+                for (const q of (r.questions || [])) {
+                    if (q.topicName === name) q.topicName = clean;
+                }
+            }
+            delete topics[name];
+            saveData();
+            if (currentResource) renderResourceContent();
+            renderPlatformOverview();
         }
 
         // Toggle topic dropdown
@@ -8387,29 +8728,35 @@ Be encouraging but honest. Focus on understanding, not perfection.`;
             if (!currentResource) { alert('Select a resource first'); return; }
 
             const parsed = parseNoteStructure(note.content);
-            const topicName = parsed.topic || 'Notes Topic';
             const noteContent = parsed.body || note.content;
+            // Hint only — the AI will return a clean topicName. We never use the
+            // raw first line directly, because that produces topic entries like
+            // "What are basic probability rules?" instead of clean concept names.
+            const topicHint = parsed.topic || '';
 
             const loadingDiv = document.createElement('div');
             loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10000;';
             loadingDiv.innerHTML = '<div style="text-align: center;"><div class="loading" style="margin: 0 auto 12px;"></div><div>Generating from your notes...</div></div>';
             document.body.appendChild(loadingDiv);
 
-            // Get existing questions on this topic to avoid repeats
+            const existingTopicNames = Object.keys(topics);
             const existingQs = currentResource.questions
-                .filter(q => q.topicName === topicName)
+                .filter(q => q.fromNote === noteId)
                 .map(q => `- "${q.question}"`);
 
             try {
-                const promptText = `You are a statistics educator. A student has written notes on "${topicName}". Generate study questions to solidify their understanding from DIFFERENT angles.
+                const promptText = `You are a statistics educator preparing a student for the NHH TECH3 retake exam. A student has written study notes. Generate questions in the TECH3 exam style.
 
-STUDENT'S NOTES:
+${TECH3_EXAM_STYLE}
+
+STUDENT'S NOTES${topicHint ? ` (working title: "${topicHint}")` : ''}:
 {{NOTE_0}}
 
-${existingQs.length > 0 ? `EXISTING QUESTIONS (do NOT repeat — use different angles):\n${existingQs.join('\n')}\n` : ''}
+${existingTopicNames.length > 0 ? `EXISTING TOPIC NAMES (reuse one of these if the concept matches, instead of creating a new topic):\n${existingTopicNames.map(t => `- ${t}`).join('\n')}\n` : ''}
+${existingQs.length > 0 ? `EXISTING QUESTIONS on this note (do NOT repeat — use different angles):\n${existingQs.join('\n')}\n` : ''}
 If the notes contain [Screenshot N] markers, the actual screenshot images are attached above — incorporate what you see in them.
 
-Generate questions at both levels:
+Generate questions at both levels, in the TECH3 exam style (real-world story with named entity, linked subparts, explicit hypotheses, in-context interpretation, code-heavy for code-type questions):
 
 LEVEL 1 (Super Basics — assumes zero knowledge):
 - 1-2 "What is X?" style questions about concepts in the notes
@@ -8417,15 +8764,23 @@ LEVEL 1 (Super Basics — assumes zero knowledge):
 LEVEL 2 (Applied — challenges deeper understanding):
 - 1 Conceptual question from a different angle than the notes
 - 1 Calculation question with specific numbers based on the notes
-- 1 Python code question applying the concept
+- 1 Python code question (write 10-30 lines of working Python, not a description)
 
-Return ONLY JSON (no markdown):
-{ "questions": [
-  { "level": 1, "type": "basics", "question": "..." },
-  { "level": 2, "type": "conceptual", "question": "..." },
-  { "level": 2, "type": "calculation", "question": "..." },
-  { "level": 2, "type": "code", "question": "..." }
-] }`;
+Return ONLY JSON (no markdown). Pick the topicName CAREFULLY:
+- It must be a clean 3-6 word CONCEPT name (e.g. "Bayes' theorem", "Sampling distribution of mean", "Type I and II errors")
+- NEVER a question (no "?")
+- NEVER a resource/module title (e.g. NOT "Spring Retake Statistics Exam", NOT "Module 1: Summarizing data")
+- If one of the EXISTING TOPIC NAMES above fits, reuse it exactly
+
+{
+  "topicName": "<clean 3-6 word concept name>",
+  "questions": [
+    { "level": 1, "type": "basics", "question": "..." },
+    { "level": 2, "type": "conceptual", "question": "..." },
+    { "level": 2, "type": "calculation", "question": "..." },
+    { "level": 2, "type": "code", "question": "..." }
+  ]
+}`;
 
                 const response = await fetch("/api/proxy", {
                     method: "POST",
@@ -8444,6 +8799,12 @@ Return ONLY JSON (no markdown):
                 const text = data.content.map(i => i.text || "").join("\n").trim();
                 const cleanText = text.replace(/```json|```/g, "").trim();
                 const result = JSON.parse(cleanText);
+
+                // Use the AI's clean topicName. Fall back to a sanitised hint if the
+                // model omitted it; never fall back to raw question text.
+                const topicName = (result.topicName && !result.topicName.includes('?'))
+                    ? result.topicName.trim()
+                    : (topicHint && !topicHint.includes('?') ? topicHint : 'Notes Topic');
 
                 if (!topics[topicName]) {
                     topics[topicName] = { resourceId: currentResource.id, questions: [], history: [] };
@@ -9392,59 +9753,98 @@ Use EXACT question IDs that appear in EXAMS_JSON. Do not invent IDs.`;
         }
 
         // ─── Importance assessment ─────────────────────────────────────
+        // Classification is per-item and vision-aware: pasted screenshots are
+        // sent to Claude as proper image content blocks (via buildNotesMessages)
+        // so the model actually SEES the exercise instead of reading a placeholder.
+        //
+        // The schema bucket is wider than before: instead of "critical / important
+        // / reference" (which biased the model toward calling everything relevant),
+        // examRelevance has 5 levels — including "tangential" and "off-syllabus" —
+        // and the prompt is calibrated against over-tagging. Each item also gets a
+        // specific angle, scenarioType, cognitive level, and match-to-past-question
+        // quality so the classification is honest about WHY it relates (or doesn't).
+        const IMPORTANCE_SCHEMA_VERSION = 2;
+
         function itemNeedsAssessment(item) {
             if (!item) return false;
             const imp = item.importance;
-            return !(imp && imp.assessedAt && imp.version === EXAM_TAXONOMY_VERSION);
+            return !(imp && imp.assessedAt && imp.schemaVersion === IMPORTANCE_SCHEMA_VERSION);
         }
 
         function getItemContentText(item, kind) {
             let raw = '';
             if (kind === 'note')      raw = item.body || item.raw || item.content || '';
             else if (kind === 'exercise') raw = item.body || item.raw || '';
-            return (item.topic ? `Title: ${item.topic}\n` : '') + raw.slice(0, 2500);
+            return (item.topic ? `Title: ${item.topic}\n\n` : '') + raw.slice(0, 4000);
         }
 
-        async function assessImportanceBatch(items) {
-            if (!examMeta || !examMeta.topics || items.length === 0) return [];
+        async function assessSingleItem(item, kind) {
+            if (!item || !examMeta || !examMeta.topics) return;
 
             const topicLines = examMeta.topics.map(t =>
-                `- ${t.id}  (${t.frequency}${t.pythonHeavy ? ', python-heavy' : ''})  ${t.name}`
+                `- ${t.id} (${t.frequency}${t.pythonHeavy ? ', python-heavy' : ''}) ${t.name}`
             ).join('\n');
             const keywords = (examMeta.criticalKeywords || []).join(', ');
-
-            // Compact list of past question IDs with a one-line summary so the
-            // model can link items to specific exam questions, not just topics.
             const pastQs = getAllPastQuestions();
             const pastQLines = pastQs.map(q =>
-                `- ${q.qid}: ${(q.prompt || '').replace(/\s+/g, ' ').slice(0, 140)}`
+                `- ${q.qid} [M${(q.modules || []).join(',') || '?'}${q.isCode ? ',code' : ''}]: ${(q.prompt || '').replace(/\s+/g, ' ').slice(0, 180)}`
             ).join('\n');
 
-            const itemsBlock = items.map((it, i) =>
-                `[${i}] kind=${it.kind}\n${it.content}\n`
-            ).join('\n---\n');
+            const contentText = getItemContentText(item, kind);
+            const kindLabel = kind === 'exercise' ? "student's practice exercise" : "student's study note";
 
-            const prompt = `You are helping a student prioritize study material for the NHH TECH3 statistics retake. The next exam will be in Python format with MORE code-writing than past V25 exams.
+            const promptText = `You are classifying a ${kindLabel} for an NHH TECH3 statistics retake. Be HONEST and SPECIFIC. Most study material is supporting or tangential to any given exam — do NOT default everything to "exam-relevant."
 
-EXAM TOPICS (id → frequency → name):
+EXAM TOPICS (id (frequency, optional flags) name):
 ${topicLines}
 
-PAST EXAM QUESTIONS (id : prompt summary):
+PAST EXAM QUESTIONS (id [modules/code] : prompt summary):
 ${pastQLines}
 
-CRITICAL KEYWORDS graders reward: ${keywords}
+GRADER KEYWORDS: ${keywords}
 
-For EACH study item below, decide:
-- level: "critical" (maps to a high/very-high frequency topic — student MUST master), "important" (relevant but lower frequency or a building block), or "reference" (background; not directly tested).
-- examTopics: array of topic IDs from above (0-4 entries). Use the EXACT ids (e.g. "t-chi-squared-test").
-- linkedQuestionIds: array of past-question IDs from above (0-4 entries) that this item is closest to or directly relates to. Use EXACT ids (e.g. "v25-retake-3c").
-- reasoning: ONE concise sentence.
+THE ITEM (text below, plus any attached screenshot images shown above):
+{{NOTE_0}}
 
-ITEMS:
-${itemsBlock}
+If the item contains screenshots, the actual exercise is almost always IN the image — read the image content carefully before classifying.
+
+Classify by these axes. Be specific. When unsure, prefer the LOWER relevance bucket.
+
+1. examRelevance (pick exactly one):
+   - "directly-tested" — essentially a worked version of a recurring exam-question pattern. You must be able to point at a specific past question scenario it mirrors.
+   - "exam-style-practice" — same skill the exam tests, but a different angle/scenario. Doing this would meaningfully prepare the student.
+   - "supporting-concept" — foundational knowledge the exam assumes, but graders will not ask about directly.
+   - "tangential" — touches a course topic but is not on the testable surface for THIS exam.
+   - "off-syllabus" — outside TECH3 scope.
+
+2. topicId — single best-match exam-topic id from the list above, or "" if no topic fits.
+3. secondaryTopics — 0-2 other topic ids if the item bridges concepts.
+4. angle — ONE short phrase naming the SPECIFIC skill practiced. Be precise: "interpret regression slope in context", "set up H0/Ha for two-sample t-test", "compute scipy.stats.norm.cdf for CLT", "describe a Monte Carlo procedure without using CLT", etc. NOT generic like "regression" or "hypothesis testing".
+5. scenarioType — exactly one of: "hypothesis-test" | "regression" | "clt-computation" | "monte-carlo" | "probability-bayes" | "descriptive-summary" | "data-visualization" | "code-writing" | "code-reading" | "interpretation" | "theory-definition" | "other".
+6. cognitiveLevel — "recall" | "apply" | "analyze".
+7. isCodeWriting — true ONLY if a full-credit answer requires writing 5+ lines of Python.
+8. matchToExamQuestion — the SINGLE best match to a past question. "no-strong-match" is a valid and common honest answer:
+   { "qid": "<past-question id or empty>",
+     "matchQuality": "near-identical" | "same-scenario" | "same-concept-different-angle" | "loosely-related" | "no-strong-match",
+     "differences": "<one sentence on how it differs>" }
+9. confidence — 0.0 to 1.0 in your overall classification.
+10. reasoning — ONE concise sentence justifying examRelevance.
+
+CALIBRATION (read this before answering): across ~100 typical study items, expect roughly 5% directly-tested, 25% exam-style-practice, 35% supporting-concept, 25% tangential, 10% off-syllabus. If you find yourself reaching for "directly-tested" or "exam-style-practice" on a majority of items, you are over-classifying — recalibrate stricter.
 
 Return ONLY this JSON (no markdown fences):
-{ "assessments": [ { "index": 0, "level": "critical"|"important"|"reference", "examTopics": ["t-..."], "linkedQuestionIds": ["v25-..."], "reasoning": "..." }, ... ] }`;
+{
+  "examRelevance": "...",
+  "topicId": "...",
+  "secondaryTopics": ["..."],
+  "angle": "...",
+  "scenarioType": "...",
+  "cognitiveLevel": "...",
+  "isCodeWriting": false,
+  "matchToExamQuestion": { "qid": "...", "matchQuality": "...", "differences": "..." },
+  "confidence": 0.0,
+  "reasoning": "..."
+}`;
 
             try {
                 const res = await fetch('/api/proxy', {
@@ -9452,8 +9852,8 @@ Return ONLY this JSON (no markdown fences):
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: 'claude-sonnet-4-5',
-                        max_tokens: 3000,
-                        messages: [{ role: 'user', content: prompt }]
+                        max_tokens: 1200,
+                        messages: buildNotesMessages(promptText, contentText)
                     })
                 });
                 const data = await res.json();
@@ -9462,28 +9862,47 @@ Return ONLY this JSON (no markdown fences):
                 }
                 const text = data.content.map(i => i.text || '').join('').trim();
                 const cleaned = text.replace(/```json|```/g, '').trim();
-                const parsed = JSON.parse(cleaned);
-                return parsed.assessments || [];
-            } catch (err) {
-                console.error('assessImportanceBatch failed:', err);
-                return [];
-            }
-        }
+                const r = JSON.parse(cleaned);
 
-        async function assessSingleItem(item, kind) {
-            if (!item || !examMeta) return;
-            const results = await assessImportanceBatch([{ kind, content: getItemContentText(item, kind) }]);
-            if (results.length > 0) {
-                const r = results[0];
+                const rel = ['directly-tested', 'exam-style-practice', 'supporting-concept', 'tangential', 'off-syllabus'].includes(r.examRelevance)
+                    ? r.examRelevance : 'tangential';
+                const match = r.matchToExamQuestion && typeof r.matchToExamQuestion === 'object'
+                    ? r.matchToExamQuestion
+                    : { qid: '', matchQuality: 'no-strong-match', differences: '' };
+
                 item.importance = {
-                    level: r.level,
-                    examTopics: r.examTopics || [],
-                    linkedQuestionIds: r.linkedQuestionIds || [],
-                    reasoning: r.reasoning || '',
+                    schemaVersion: IMPORTANCE_SCHEMA_VERSION,
+                    taxonomyVersion: EXAM_TAXONOMY_VERSION,
                     assessedAt: new Date().toISOString(),
-                    version: EXAM_TAXONOMY_VERSION
+                    examRelevance: rel,
+                    topicId: r.topicId || '',
+                    secondaryTopics: Array.isArray(r.secondaryTopics) ? r.secondaryTopics.filter(Boolean) : [],
+                    angle: (r.angle || '').toString().slice(0, 120),
+                    scenarioType: r.scenarioType || 'other',
+                    cognitiveLevel: r.cognitiveLevel || 'apply',
+                    isCodeWriting: !!r.isCodeWriting,
+                    matchToExamQuestion: {
+                        qid: match.qid || '',
+                        matchQuality: match.matchQuality || 'no-strong-match',
+                        differences: (match.differences || '').toString().slice(0, 200)
+                    },
+                    confidence: typeof r.confidence === 'number' ? Math.max(0, Math.min(1, r.confidence)) : 0.5,
+                    reasoning: (r.reasoning || '').toString().slice(0, 300),
+
+                    // Back-compat shims so legacy readers (buildExamTopicCoverage, the
+                    // dashboard "past Qs touched" set, etc.) keep working without
+                    // needing a parallel refactor.
+                    examTopics: [r.topicId, ...(Array.isArray(r.secondaryTopics) ? r.secondaryTopics : [])].filter(Boolean),
+                    linkedQuestionIds: (match.qid && match.matchQuality !== 'no-strong-match') ? [match.qid] : [],
+                    level:
+                        rel === 'directly-tested'    ? 'critical'  :
+                        rel === 'exam-style-practice'? 'important' :
+                        rel === 'supporting-concept' ? 'reference' :
+                                                       'tangential'
                 };
                 saveData();
+            } catch (err) {
+                console.error('assessSingleItem failed:', err);
             }
         }
 
@@ -9509,29 +9928,14 @@ Return ONLY this JSON (no markdown fences):
             importanceProgress = { current: 0, total: queue.length };
             renderImportanceProgress();
 
-            const BATCH = 5;
-            for (let i = 0; i < queue.length; i += BATCH) {
-                const batch = queue.slice(i, i + BATCH);
-                const payload = batch.map(b => ({
-                    kind: b.kind,
-                    content: getItemContentText(b.item, b.kind)
-                }));
-                const results = await assessImportanceBatch(payload);
-                for (const r of results) {
-                    const target = batch[r.index];
-                    if (!target) continue;
-                    target.item.importance = {
-                        level: r.level,
-                        examTopics: r.examTopics || [],
-                        linkedQuestionIds: r.linkedQuestionIds || [],
-                        reasoning: r.reasoning || '',
-                        assessedAt: new Date().toISOString(),
-                        version: EXAM_TAXONOMY_VERSION
-                    };
-                }
-                importanceProgress.current = Math.min(queue.length, i + BATCH);
+            // Per-item assessment (so vision input works for image-based exercises).
+            // Concurrency=3 keeps it fast without tripping API rate limits.
+            const CONCURRENCY = 3;
+            for (let i = 0; i < queue.length; i += CONCURRENCY) {
+                const batch = queue.slice(i, i + CONCURRENCY);
+                await Promise.all(batch.map(b => assessSingleItem(b.item, b.kind)));
+                importanceProgress.current = Math.min(queue.length, i + batch.length);
                 renderImportanceProgress();
-                saveData();
             }
             importanceProgress = null;
             renderImportanceProgress();
@@ -9564,29 +9968,54 @@ Return ONLY this JSON (no markdown fences):
 
         function renderImportanceBadge(item) {
             if (!item || !item.importance) return '';
-            const lvl = item.importance.level;
-            if (lvl !== 'critical' && lvl !== 'important') return '';
-            const cls = lvl === 'critical' ? 'critical' : 'important';
-            const label = lvl === 'critical' ? 'Absolutely exam-relevant' : 'Exam-relevant';
-            const topics = (item.importance.examTopics || []).slice(0, 2);
-            const linked = (item.importance.linkedQuestionIds || []).slice(0, 4);
-            const reasoning = (item.importance.reasoning || '').replace(/"/g, "'");
+            const imp = item.importance;
+            // Trust new-schema field; fall back to the legacy `level` only if the
+            // old schema is still around (will be re-assessed on next backfill).
+            const rel = imp.examRelevance || (
+                imp.level === 'critical' ? 'directly-tested' :
+                imp.level === 'important' ? 'exam-style-practice' :
+                imp.level === 'reference' ? 'supporting-concept' : ''
+            );
 
-            const topicsHtml = topics.map(t => {
+            // Tangential / off-syllabus / unknown → no badge. Keeps the UI quiet
+            // and stops the "everything is exam-relevant" inflation.
+            let cls, label;
+            switch (rel) {
+                case 'directly-tested':     cls = 'critical';    label = 'Directly tested';      break;
+                case 'exam-style-practice': cls = 'important';   label = 'Exam-style practice';  break;
+                case 'supporting-concept':  cls = 'supporting';  label = 'Supporting concept';   break;
+                default: return '';
+            }
+
+            const topicIds = [imp.topicId, ...(imp.secondaryTopics || [])].filter(Boolean).slice(0, 2);
+            const match = imp.matchToExamQuestion || {};
+            const showLink = match.qid && match.matchQuality && match.matchQuality !== 'no-strong-match';
+            const ref = showLink ? examQuestionRef(match.qid) : null;
+            const angle = imp.angle || '';
+            const confPct = typeof imp.confidence === 'number' ? Math.round(imp.confidence * 100) : null;
+
+            const tooltipLines = [];
+            if (imp.reasoning) tooltipLines.push(imp.reasoning);
+            if (showLink && match.differences) tooltipLines.push(`vs ${ref ? ref.short : match.qid} (${match.matchQuality}): ${match.differences}`);
+            if (imp.scenarioType && imp.scenarioType !== 'other') tooltipLines.push(`Scenario: ${imp.scenarioType}`);
+            if (confPct !== null) tooltipLines.push(`Confidence: ${confPct}%`);
+            const tooltip = tooltipLines.join('\n');
+
+            const topicsHtml = topicIds.map(t => {
                 const name = examTopicNameById(t) || t;
                 return `<span class="erb-topic-pill">${escapeHtml(name)}</span>`;
             }).join('');
-            const linkedHtml = linked.map(qid => {
-                const ref = examQuestionRef(qid);
-                if (!ref) return '';
-                return `<span class="erb-link-pill" onclick="event.stopPropagation(); viewExamQuestion('${qid}')" title="Open past exam question">${escapeHtml(ref.short)}</span>`;
-            }).join('');
+            const angleHtml = angle ? `<span class="erb-angle">${escapeHtml(angle)}</span>` : '';
+            const linkHtml = (showLink && ref)
+                ? `<span class="erb-link-pill" onclick="event.stopPropagation(); viewExamQuestion('${match.qid}')" title="Match: ${escapeHtml(match.matchQuality)}">${escapeHtml(ref.short)}</span>`
+                : '';
 
             return `
-                <div class="exam-relevance-badge ${cls}" title="${escapeHtml(reasoning)}">
+                <div class="exam-relevance-badge ${cls}" title="${escapeHtml(tooltip)}">
                     <span class="erb-label">${label}</span>
+                    ${angleHtml ? `<span class="erb-divider"></span>${angleHtml}` : ''}
                     ${topicsHtml ? `<span class="erb-divider"></span>${topicsHtml}` : ''}
-                    ${linkedHtml ? `<span class="erb-divider"></span><span class="erb-link-label">past Qs:</span>${linkedHtml}` : ''}
+                    ${linkHtml ? `<span class="erb-divider"></span>${linkHtml}` : ''}
                 </div>
             `;
         }
@@ -9652,6 +10081,12 @@ Return ONLY this JSON (no markdown fences):
                 const tag = (kind, item, attempts, overrideTopicIds) => {
                     const tags = overrideTopicIds || item?.importance?.examTopics || [];
                     if (tags.length === 0) return;
+                    // Skip tangential/off-syllabus items so the exam-topic stats
+                    // reflect material the student should actually focus on. Items
+                    // tagged "supporting-concept" still count — they just don't get
+                    // a loud badge in the resource view.
+                    const rel = item?.importance?.examRelevance;
+                    if (rel === 'tangential' || rel === 'off-syllabus') return;
                     const attemptList = attempts || [];
                     const latest = attemptList[attemptList.length - 1];
                     const latestRating = latest?.feedback?.rating ?? null;
