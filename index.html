@@ -2143,6 +2143,21 @@
             font-weight: 400;
             color: #374151;
         }
+        .flash-card-question .note-image,
+        .flash-card-answer .note-image {
+            max-width: 100%;
+            max-height: 220px;
+            margin: 6px auto;
+            border-radius: 6px;
+        }
+        .flash-card-question .note-image {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .flash-card-empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 13px;
+        }
         .flash-card-hint {
             position: absolute;
             bottom: 6px;
@@ -5301,6 +5316,13 @@ Title:`
             document.body.appendChild(overlay);
         }
 
+        // Flip a flash card, but not when the user clicks an embedded image
+        // (those open the lightbox instead).
+        function flipFlashCard(event, card) {
+            if (event.target.closest('img')) return;
+            card.classList.toggle('flipped');
+        }
+
         // Extract embedded screenshots from a note's text. Returns:
         //   { text: <note text with images replaced by [Screenshot N] markers>,
         //     images: [{ media_type, data }, ...] }
@@ -5513,50 +5535,80 @@ Title:`
             }
         }
 
-        // Parse a note into a flash card. Supports two shapes:
+        // Parse a note into a flash card. Supports these shapes:
         //   1) Question?\n\nAnswer
         //   2) ## Topic\n\nQuestion?\n\nAnswer
-        // The front must contain "?". Returns null if it doesn't match.
+        //   3) ## Topic Question? Answer        (single paragraph, no blank line)
+        //   4) ## Topic Question?               (no answer yet — still a card)
+        // The question must contain "?". Returns null if it doesn't match.
         function parseFlashCard(note) {
             const content = (note.content || '').replace(/\r\n/g, '\n').trim();
-            if (!content) return null;
+            if (!content || !content.includes('?')) return null;
 
-            // Split on blank lines into blocks.
             const blocks = content.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
-            if (blocks.length < 2) return null;
+            if (blocks.length === 0) return null;
+
+            const hasHashPrefix = /^#{1,6}\s*\S/.test(content);
 
             let topic = null;
-            let questionIdx = 0;
+            let questionRaw = null;
+            let back = null;
 
-            // Optional "## Topic" header as the first block (single line, no "?").
-            const headerMatch = blocks[0].match(/^#{1,6}\s+(.+)$/);
-            if (headerMatch && !blocks[0].includes('\n') && !blocks[0].includes('?') && blocks.length >= 3) {
-                topic = headerMatch[1].trim();
-                questionIdx = 1;
+            // Case A: "## Topic" alone as the first block, then Question, then Answer.
+            if (blocks.length >= 3) {
+                const h = blocks[0].match(/^#{1,6}\s*(.+)$/);
+                if (h && !blocks[0].includes('\n') && !blocks[0].includes('?')) {
+                    topic = h[1].trim();
+                    questionRaw = blocks[1];
+                    back = blocks.slice(2).join('\n\n').trim();
+                }
             }
 
-            const question = blocks[questionIdx];
-            const back = blocks.slice(questionIdx + 1).join('\n\n').trim();
-            if (!question || !back) return null;
-            if (!question.includes('?')) return null;
+            // Case B: standard Question?\n\nAnswer (first block already contains "?").
+            if (!questionRaw && blocks.length >= 2 && blocks[0].includes('?')) {
+                questionRaw = blocks[0];
+                back = blocks.slice(1).join('\n\n').trim();
+            }
 
-            // If the question still has a leading "## ..." (e.g. a note written
-            // as "## t vs Z distribution?\n\nAnswer" or
-            // "## T-Test What is X?\n\nAnswer"), pull the markdown prefix off
-            // and, when possible, split a leading topic phrase out of the
-            // single line so it renders as a label instead of literal "##".
-            let questionText = question;
+            // Case C/D: no blank-line separator — split the whole note at the first "?".
+            if (!questionRaw) {
+                const whole = blocks.join('\n\n');
+                const qEnd = whole.indexOf('?');
+                if (qEnd >= 0) {
+                    questionRaw = whole.slice(0, qEnd + 1).trim();
+                    back = whole.slice(qEnd + 1).trim();
+                }
+            }
+
+            if (!questionRaw || !questionRaw.includes('?')) return null;
+            back = back || '';
+            // Without a "##" topic prefix, require a non-empty answer to avoid
+            // turning stray questions into empty cards.
+            if (!back && !hasHashPrefix) return null;
+
+            // Strip the markdown "## ..." prefix from the question and, if a
+            // topic phrase is embedded (single-line "## Topic Question?"),
+            // pull it out so it renders as a label rather than as part of Q.
+            let questionText = questionRaw;
             if (!topic) {
-                const inlineHeader = question.match(/^#{1,6}\s+(.+)$/);
-                if (inlineHeader && !question.includes('\n')) {
-                    const headerText = inlineHeader[1].trim();
-                    const qWord = /^(.+?)\s+((?:What|How|Why|When|Where|Which|Who|Is|Are|Do|Does|Did|Can|Could|Should|Would|Will|Has|Have|Had|Discuss|Explain|Describe|Compare|Define|If|Suppose|Given)\b.*\?)$/i;
-                    const split = headerText.match(qWord);
-                    if (split) {
-                        topic = split[1].trim();
-                        questionText = split[2].trim();
+                const lines = questionRaw.split('\n');
+                const firstLineHeader = lines[0].match(/^#{1,6}\s*(.+)$/);
+                if (firstLineHeader) {
+                    const firstLineText = firstLineHeader[1].trim();
+                    const restLines = lines.slice(1).join('\n').trim();
+                    if (restLines) {
+                        // Multi-line: first line is the topic, rest is the question
+                        topic = firstLineText.replace(/\?+\s*$/, '').trim();
+                        questionText = restLines;
                     } else {
-                        questionText = headerText;
+                        const qWord = /^(.+?)\s+((?:What|How|Why|When|Where|Which|Who|Is|Are|Do|Does|Did|Can|Could|Should|Would|Will|Has|Have|Had|Discuss|Explain|Describe|Compare|Define|If|Suppose|Given)\b.*\?)$/i;
+                        const split = firstLineText.match(qWord);
+                        if (split) {
+                            topic = split[1].trim();
+                            questionText = split[2].trim();
+                        } else {
+                            questionText = firstLineText;
+                        }
                     }
                 }
             }
@@ -5647,17 +5699,20 @@ Title:`
                             const topicHtml = card.topic
                                 ? `<div class="flash-card-topic">${escapeHtml(card.topic)}</div>`
                                 : '';
+                            const answerHtml = card.back
+                                ? renderTextWithImages(card.back)
+                                : '<span class="flash-card-empty">No answer yet — edit the note to add one.</span>';
                             html += `
-                                <div class="flash-card" onclick="this.classList.toggle('flipped')">
+                                <div class="flash-card" onclick="flipFlashCard(event, this)">
                                     <div class="flash-card-inner">
                                         <div class="flash-card-front">
                                             ${topicHtml}
-                                            <div class="flash-card-question">${escapeHtml(card.question || card.front)}</div>
+                                            <div class="flash-card-question">${renderTextWithImages(card.question || card.front)}</div>
                                             <span class="flash-card-hint">tap to flip</span>
                                         </div>
                                         <div class="flash-card-back">
                                             ${topicHtml}
-                                            <div class="flash-card-answer">${escapeHtml(card.back)}</div>
+                                            <div class="flash-card-answer">${answerHtml}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -5669,7 +5724,7 @@ Title:`
                     if (skipped.length > 0) {
                         html += `<div style="margin-top: 14px;">
                             <div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">
-                                ${skipped.length} ${skipped.length === 1 ? 'note' : 'notes'} can't be turned into a card yet — they need a question (with "?"), a blank line, then the answer.
+                                ${skipped.length} ${skipped.length === 1 ? 'note' : 'notes'} can't be turned into a card yet — they need a question (with "?") somewhere in the text.
                             </div>`;
                         for (const n of skipped) {
                             const preview = (n.content || '').slice(0, 100);
