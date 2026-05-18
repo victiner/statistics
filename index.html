@@ -2085,16 +2085,16 @@
         .flash-card-back {
             position: absolute;
             inset: 0;
-            padding: 18px;
+            padding: 34px 18px 22px;
             border-radius: 14px;
             backface-visibility: hidden;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             justify-content: center;
             text-align: center;
             font-size: 14px;
             line-height: 1.5;
-            white-space: pre-wrap;
             overflow-y: auto;
         }
         .flash-card-front {
@@ -2108,8 +2108,40 @@
             border: 1px solid #e5e7eb;
             color: #374151;
             transform: rotateY(180deg);
+            justify-content: flex-start;
             text-align: left;
-            align-items: flex-start;
+        }
+        .flash-card-topic {
+            position: absolute;
+            top: 10px;
+            left: 14px;
+            right: 14px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .flash-card-back .flash-card-topic {
+            color: #6b7280;
+            opacity: 0.85;
+        }
+        .flash-card-question {
+            margin: auto 0;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+        .flash-card-answer {
+            text-align: left;
+            white-space: pre-wrap;
+            font-weight: 400;
+            color: #374151;
         }
         .flash-card-hint {
             position: absolute;
@@ -5481,18 +5513,55 @@ Title:`
             }
         }
 
-        // Parse a note into a flash card. Rule: split on the first blank line.
-        // Front = text before (must contain "?"). Back = text after.
-        // Returns null if the note doesn't match the flash card format.
+        // Parse a note into a flash card. Supports two shapes:
+        //   1) Question?\n\nAnswer
+        //   2) ## Topic\n\nQuestion?\n\nAnswer
+        // The front must contain "?". Returns null if it doesn't match.
         function parseFlashCard(note) {
-            const content = (note.content || '').replace(/\r\n/g, '\n');
-            const match = content.match(/^([\s\S]*?)\n\s*\n([\s\S]*)$/);
-            if (!match) return null;
-            const front = match[1].trim();
-            const back = match[2].trim();
-            if (!front || !back) return null;
-            if (!front.includes('?')) return null;
-            return { front, back };
+            const content = (note.content || '').replace(/\r\n/g, '\n').trim();
+            if (!content) return null;
+
+            // Split on blank lines into blocks.
+            const blocks = content.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+            if (blocks.length < 2) return null;
+
+            let topic = null;
+            let questionIdx = 0;
+
+            // Optional "## Topic" header as the first block (single line, no "?").
+            const headerMatch = blocks[0].match(/^#{1,6}\s+(.+)$/);
+            if (headerMatch && !blocks[0].includes('\n') && !blocks[0].includes('?') && blocks.length >= 3) {
+                topic = headerMatch[1].trim();
+                questionIdx = 1;
+            }
+
+            const question = blocks[questionIdx];
+            const back = blocks.slice(questionIdx + 1).join('\n\n').trim();
+            if (!question || !back) return null;
+            if (!question.includes('?')) return null;
+
+            // If the question still has a leading "## ..." (e.g. a note written
+            // as "## t vs Z distribution?\n\nAnswer" or
+            // "## T-Test What is X?\n\nAnswer"), pull the markdown prefix off
+            // and, when possible, split a leading topic phrase out of the
+            // single line so it renders as a label instead of literal "##".
+            let questionText = question;
+            if (!topic) {
+                const inlineHeader = question.match(/^#{1,6}\s+(.+)$/);
+                if (inlineHeader && !question.includes('\n')) {
+                    const headerText = inlineHeader[1].trim();
+                    const qWord = /^(.+?)\s+((?:What|How|Why|When|Where|Which|Who|Is|Are|Do|Does|Did|Can|Could|Should|Would|Will|Has|Have|Had|Discuss|Explain|Describe|Compare|Define|If|Suppose|Given)\b.*\?)$/i;
+                    const split = headerText.match(qWord);
+                    if (split) {
+                        topic = split[1].trim();
+                        questionText = split[2].trim();
+                    } else {
+                        questionText = headerText;
+                    }
+                }
+            }
+
+            return { front: questionText, back, topic, question: questionText };
         }
 
         // Group notes by resource, ordered alphabetically by resource title.
@@ -5575,15 +5644,20 @@ Title:`
                     if (cards.length > 0) {
                         html += '<div class="flash-cards-grid">';
                         for (const { note, card } of cards) {
+                            const topicHtml = card.topic
+                                ? `<div class="flash-card-topic">${escapeHtml(card.topic)}</div>`
+                                : '';
                             html += `
                                 <div class="flash-card" onclick="this.classList.toggle('flipped')">
                                     <div class="flash-card-inner">
                                         <div class="flash-card-front">
-                                            ${escapeHtml(card.front)}
+                                            ${topicHtml}
+                                            <div class="flash-card-question">${escapeHtml(card.question || card.front)}</div>
                                             <span class="flash-card-hint">tap to flip</span>
                                         </div>
                                         <div class="flash-card-back">
-                                            ${escapeHtml(card.back)}
+                                            ${topicHtml}
+                                            <div class="flash-card-answer">${escapeHtml(card.back)}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -10480,16 +10554,22 @@ Return ONLY this JSON (no markdown fences):
             }
             const modal = ensureMockExamModal();
             modal.classList.add('show');
+            // Computed below after the modal HTML is in the DOM.
+            const gapCount = collectMissedGaps().length;
             document.getElementById('mockExamBody').innerHTML = `
                 <h2 style="margin-top: 0;">Generate Mock Exam</h2>
                 <p style="color: #4b5563;">Produces a fresh 5-problem TECH3-style exam in Python format. Sit it timed, then submit for AI grading.</p>
                 <div class="form-group">
                     <label class="form-label">Focus</label>
                     <select class="form-select" id="mockExamFocus">
+                        <option value="myGaps">Target what I've missed (uses past feedback as direct input)</option>
                         <option value="balanced">Balanced (matches past exam mix)</option>
-                        <option value="weakAreas">Target my weak areas</option>
+                        <option value="weakAreas">Target my weak topics</option>
                         <option value="codeHeavy">Code-heavy (more Python writing)</option>
                     </select>
+                    <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">
+                        <span id="mockExamGapsHint"></span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Time limit (minutes)</label>
@@ -10500,6 +10580,13 @@ Return ONLY this JSON (no markdown fences):
                     <button class="btn-primary" onclick="generateMockExam()">Generate</button>
                 </div>
             `;
+            // Fill in the gaps hint after the modal HTML is on the page.
+            const hint = document.getElementById('mockExamGapsHint');
+            if (hint) {
+                hint.textContent = gapCount === 0
+                    ? 'No prior "missed" feedback yet — answer a few questions first to populate gaps.'
+                    : `${gapCount} distinct gap${gapCount === 1 ? '' : 's'} collected from your past feedback — "Target what I\'ve missed" will weave these directly into the new exam.`;
+            }
         }
 
         function closeMockExamModal() {
@@ -10509,6 +10596,60 @@ Return ONLY this JSON (no markdown fences):
                 clearInterval(mockExamSession._timerId);
                 mockExamSession._timerId = null;
             }
+        }
+
+        // Walk every past attempt (questions, exercises, prior mock exams) and
+        // collect the "missed" + low-rated "improvements" feedback entries.
+        // Only counts attempts the student got <8/10 on — items they aced shouldn't
+        // count as gaps. Returns concepts sorted by frequency, with the topics
+        // they came up in for context.
+        function collectMissedGaps() {
+            const counts = new Map(); // normalised key -> { text, count, contexts:Set }
+            const bump = (text, ctx) => {
+                if (!text || typeof text !== 'string') return;
+                const clean = text.trim();
+                if (!clean) return;
+                const key = clean.toLowerCase().replace(/\s+/g, ' ').slice(0, 200);
+                if (!counts.has(key)) counts.set(key, { text: clean.slice(0, 240), count: 0, contexts: new Set() });
+                const e = counts.get(key);
+                e.count++;
+                if (ctx) e.contexts.add(ctx);
+            };
+
+            for (const r of resources) {
+                for (const q of (r.questions || [])) {
+                    for (const a of (q.attempts || [])) {
+                        const f = a.feedback;
+                        if (!f) continue;
+                        if (typeof f.rating === 'number' && f.rating >= 8) continue;
+                        for (const m of (f.missed || []))      bump(m, q.topicName);
+                        for (const i of (f.improvements || [])) bump(i, q.topicName);
+                    }
+                }
+                for (const ex of (r.exercises || [])) {
+                    for (const a of (ex.attempts || [])) {
+                        const f = a.feedback;
+                        if (!f) continue;
+                        if (typeof f.rating === 'number' && f.rating >= 8) continue;
+                        for (const m of (f.missed || []))      bump(m, ex.topic);
+                        for (const i of (f.improvements || [])) bump(i, ex.topic);
+                    }
+                }
+            }
+            // Past mock exam grades — each per-part grade has its own "missed" array.
+            const history = (examMeta && examMeta.mockExamHistory) || [];
+            for (const h of history) {
+                for (const g of Object.values(h.grades || {})) {
+                    // Only count gaps from parts where the student scored < 80% of available points
+                    // (we don't have the point split here, so include them all; the per-question
+                    // <8/10 filter above is doing most of the work)
+                    for (const m of (g.missed || [])) bump(m, h.title);
+                }
+            }
+
+            return [...counts.values()]
+                .sort((a, b) => b.count - a.count)
+                .map(e => ({ text: e.text, count: e.count, contexts: [...e.contexts].slice(0, 3) }));
         }
 
         async function generateMockExam() {
@@ -10524,10 +10665,22 @@ Return ONLY this JSON (no markdown fences):
             const weak = examStats.filter(s => s.ratedCount > 0 && (s.totalRating / s.ratedCount) < 6.5).map(s => s.topic.name).slice(0, 6);
             const uncovered = examStats.filter(s => s.hits === 0 && s.topic.criticalForRetake).map(s => s.topic.name).slice(0, 6);
 
+            // Pull every "missed" feedback item from past attempts. These are the
+            // exact things graders have marked the student down on — the mock exam
+            // should give them another shot at each one.
+            const gaps = collectMissedGaps();
+            const topGaps = gaps.slice(0, 30);
+            const gapsBlock = topGaps.length === 0
+                ? '\n(No prior "missed" feedback yet — student has answered nothing, or scored ≥8/10 on everything.)'
+                : topGaps.map((g, i) =>
+                    `G${i + 1} [seen ${g.count}×${g.contexts.length ? ` in: ${g.contexts.join(', ')}` : ''}] — ${g.text}`
+                  ).join('\n');
+
             const focusGuidance =
-                focus === 'weakAreas' ? `Bias the problem mix toward these WEAK areas: ${weak.join(', ') || '(no weak areas yet)'}. Also include uncovered critical topics: ${uncovered.join(', ') || '(none)'}.`
-              : focus === 'codeHeavy' ? `At least 3 of 5 problems must include substantial Python code-writing subparts (10-30 lines). Cover: Monte Carlo loops, statsmodels OLS, bootstrap, KFold cross-validation, scipy.stats hypothesis tests.`
-              :                         `Balanced mix matching the past V25 exam structure.`;
+                focus === 'myGaps' ? `PRIMARY DIRECTIVE: this exam is a TARGETED RE-TEST of what the student has previously missed. Across the 5 problems, the parts MUST collectively exercise EVERY gap in the list below (or as many as fit in 5 problems of 3-6 parts each). Prioritize the highest-count gaps. Maintain TECH3 exam format strictly — DO NOT just enumerate concepts; weave each gap into a real-world story with named entities and linked subparts, exactly like the past-question samples below.`
+              : focus === 'weakAreas' ? `Bias the problem mix toward these WEAK topics: ${weak.join(', ') || '(no weak areas yet)'}. Also include uncovered critical topics: ${uncovered.join(', ') || '(none)'}. Additionally consider the "missed gaps" list below — at least 2 of 5 problems should target items from it.`
+              : focus === 'codeHeavy' ? `At least 3 of 5 problems must include substantial Python code-writing subparts (10-30 lines). Cover: Monte Carlo loops, statsmodels OLS, bootstrap, KFold cross-validation, scipy.stats hypothesis tests. Also fold in 2-3 items from the "missed gaps" list below where they naturally fit.`
+              :                         `Balanced mix matching the past V25 exam structure. Where natural, fold in items from the "missed gaps" list below so the exam doubles as remediation.`;
 
             // Real past-question snippets (style anchors). We send a representative
             // sample so the model mimics phrasing, structure, and difficulty rather
@@ -10551,7 +10704,10 @@ ${JSON.stringify(examMeta.outline || [], null, 2)}
 RECURRING TOPICS (with frequency):
 ${(examMeta.topics || []).map(t => `- ${t.id}: ${t.name} (${t.frequency}${t.pythonHeavy ? ', python-heavy' : ''})`).join('\n')}
 
-REAL PAST-QUESTION SAMPLES — match this phrasing, density, and style:
+GAPS — items the student has previously been marked down on (sorted by how often each came up across past feedback). Each gap is labelled G1, G2, … so you can reference which gap(s) a given part is designed to re-test:
+${gapsBlock}
+
+REAL PAST-QUESTION SAMPLES — match this phrasing, density, structure, and difficulty:
 ${sample}
 
 REQUIREMENTS:
@@ -10562,12 +10718,14 @@ REQUIREMENTS:
 - For regression: include a realistic OLS Regression Results-style table inline; force interpretation in context + assumption checks (describe diagnostic plots in words).
 - Reward these grader keywords: ${(examMeta.criticalKeywords || []).join(', ')}.
 - Total = 100 points distributed across problems.
-- Each part should reference the past question IDs it's inspired by via "inspiredBy" so the student can compare to the real ones.
+- Each part MUST include "inspiredBy" with the past question ID(s) whose format it borrows, AND "targetsGaps" listing the gap labels (G1, G2, …) it's designed to re-test. Empty array if it covers a topic not in the gaps list.
+- The cumulative "targetsGaps" across all parts should cover as many distinct gap labels from above as possible — every G# the student has accumulated is something they need another shot at.
 
 Return ONLY this JSON (no markdown fences):
 {
   "title": "TECH3 Mock Exam — ${new Date().toISOString().slice(0,10)}",
   "totalPoints": 100,
+  "gapsTargeted": ["G1", "G2", "..."],
   "problems": [
     {
       "number": 1,
@@ -10582,7 +10740,8 @@ Return ONLY this JSON (no markdown fences):
           "expectedAnswer": "<brief description of what a full-credit answer contains>",
           "isCode": false,
           "examTopicIds": ["<topic id from the taxonomy>"],
-          "inspiredBy": ["<past question ID>"]
+          "inspiredBy": ["<past question ID>"],
+          "targetsGaps": ["G1", "..."]
         }
       ]
     }
@@ -10616,7 +10775,13 @@ Return ONLY this JSON (no markdown fences):
                     startedAt: null,
                     answers: {},
                     grades: {},
-                    status: 'ready'
+                    status: 'ready',
+                    focus,
+                    // Snapshot of the gaps the prompt asked Claude to cover, so the
+                    // grading screen can show "you re-tested G3, G7, G12 — of those
+                    // you got G7 right, G3 and G12 are still gaps."
+                    gapsSnapshot: topGaps,
+                    gapsTargeted: Array.isArray(parsed.gapsTargeted) ? parsed.gapsTargeted : []
                 };
                 renderMockExamSit();
             } catch (err) {
@@ -10784,7 +10949,10 @@ Return ONLY JSON (no markdown fences):
                     totalPoints: m.totalPoints,
                     problems: m.problems,
                     answers: m.answers,
-                    grades: m.grades
+                    grades: m.grades,
+                    focus: m.focus,
+                    gapsSnapshot: m.gapsSnapshot || [],
+                    gapsTargeted: m.gapsTargeted || []
                 });
                 saveData();
                 updateProgressStats();
@@ -10805,6 +10973,48 @@ Return ONLY JSON (no markdown fences):
             const pct = m.totalPoints > 0 ? (m.totalEarned / m.totalPoints * 100) : 0;
             const ratingCls = pct >= 80 ? 'good' : pct >= 60 ? 'fair' : 'weak';
 
+            // Build gap-coverage summary if this exam targeted prior gaps.
+            // A gap counts as "cleared" if every part that targeted it scored ≥80%,
+            // otherwise it's "still a gap" (and will keep showing up in future exams).
+            let gapsSummaryHtml = '';
+            const snapshot = m.gapsSnapshot || [];
+            if (snapshot.length > 0) {
+                const gapStatus = new Map(); // "G3" -> { text, parts: [{key, ratio}] }
+                snapshot.forEach((g, i) => gapStatus.set(`G${i + 1}`, { text: g.text, count: g.count, parts: [] }));
+                for (const p of m.problems) {
+                    for (const part of (p.parts || [])) {
+                        const tags = part.targetsGaps || [];
+                        if (tags.length === 0) continue;
+                        const key = `${p.number}-${part.letter}`;
+                        const grade = m.grades[key] || {};
+                        const earned = grade.earned || 0;
+                        const ratio = part.points > 0 ? earned / part.points : 0;
+                        for (const tag of tags) {
+                            if (gapStatus.has(tag)) gapStatus.get(tag).parts.push({ key, ratio });
+                        }
+                    }
+                }
+                const targeted = [...gapStatus.entries()].filter(([, v]) => v.parts.length > 0);
+                if (targeted.length > 0) {
+                    const cleared = targeted.filter(([, v]) => v.parts.every(p => p.ratio >= 0.8));
+                    const stillGap = targeted.filter(([, v]) => !v.parts.every(p => p.ratio >= 0.8));
+                    const untouched = [...gapStatus.entries()].filter(([, v]) => v.parts.length === 0);
+                    gapsSummaryHtml = `
+                        <div class="outline-section" style="background: #fffbeb; border-color: #fbbf24;">
+                            <h3 style="margin-top: 0;">Gap coverage</h3>
+                            <div style="font-size: 13px; color: #4b5563; margin-bottom: 10px;">
+                                This mock exam targeted ${targeted.length} of the ${snapshot.length} gaps from your past feedback.
+                                <strong style="color: #15803d;">${cleared.length} cleared</strong> ·
+                                <strong style="color: #b91c1c;">${stillGap.length} still a gap</strong>${untouched.length ? ` · ${untouched.length} not re-tested this round` : ''}.
+                            </div>
+                            ${cleared.length > 0 ? `<details style="margin-top: 8px;"><summary style="cursor: pointer; font-weight: 600; color: #15803d; font-size: 13px;">✓ Cleared (${cleared.length})</summary><ul style="margin: 6px 0 0 20px; font-size: 13px; color: #374151;">${cleared.map(([tag, v]) => `<li><strong>${tag}</strong> — ${escapeHtml(v.text)}</li>`).join('')}</ul></details>` : ''}
+                            ${stillGap.length > 0 ? `<details open style="margin-top: 8px;"><summary style="cursor: pointer; font-weight: 600; color: #b91c1c; font-size: 13px;">✗ Still a gap (${stillGap.length})</summary><ul style="margin: 6px 0 0 20px; font-size: 13px; color: #374151;">${stillGap.map(([tag, v]) => `<li><strong>${tag}</strong> — ${escapeHtml(v.text)}</li>`).join('')}</ul></details>` : ''}
+                            ${untouched.length > 0 ? `<details style="margin-top: 8px;"><summary style="cursor: pointer; font-weight: 600; color: #6b7280; font-size: 13px;">Not re-tested in this exam (${untouched.length})</summary><ul style="margin: 6px 0 0 20px; font-size: 13px; color: #6b7280;">${untouched.map(([tag, v]) => `<li><strong>${tag}</strong> — ${escapeHtml(v.text)}</li>`).join('')}</ul></details>` : ''}
+                        </div>
+                    `;
+                }
+            }
+
             const partsHtml = m.problems.map(p => `
                 <div class="mock-problem">
                     <div class="mock-problem-header"><h3>Problem ${p.number}: ${escapeHtml(p.title || '')}</h3></div>
@@ -10815,11 +11025,13 @@ Return ONLY JSON (no markdown fences):
                         const ratio = part.points > 0 ? earned / part.points : 0;
                         const rc = ratio >= 0.8 ? 'good' : ratio >= 0.5 ? 'fair' : 'weak';
                         const ans = m.answers[key] || '(blank)';
+                        const gapTags = (part.targetsGaps || []).map(t => `<span class="freq-pill" title="Re-tested gap from past feedback">${escapeHtml(t)}</span>`).join(' ');
                         return `
                             <div class="mock-part graded">
                                 <div class="mock-part-prompt"><strong>${escapeHtml(part.letter)})</strong> ${renderMarkdown(part.prompt || '')}</div>
                                 <div class="mock-grade-row">
                                     <span class="rating-score-small rating-${rc}">${earned}/${part.points}</span>
+                                    ${gapTags}
                                     <span style="color: #4b5563; font-size: 13px;">${escapeHtml(g.feedback || '')}</span>
                                 </div>
                                 <details class="mock-answer-details">
@@ -10839,6 +11051,7 @@ Return ONLY JSON (no markdown fences):
                     <div class="mock-total rating-${ratingCls}">${m.totalEarned}/${m.totalPoints} (${pct.toFixed(1)}%)</div>
                     <button class="btn-secondary" onclick="closeMockExamModal()">Close</button>
                 </div>
+                ${gapsSummaryHtml}
                 <div class="mock-exam-body">${partsHtml}</div>
             `;
         }
