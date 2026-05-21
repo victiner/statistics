@@ -7161,6 +7161,143 @@ Return ONLY JSON (no markdown). Pick the topicName CAREFULLY:
             }
         }
 
+        // Open the answer modal for a study note. Mirrors the exercise answer
+        // flow exactly: same timer, same Python editor, same TECH3-graded
+        // feedback. Attempts are stored on note.attempts so the student can
+        // revisit the question and add more attempts later.
+        function openNoteAnswerModal(noteId) {
+            const note = (currentResource?.studyNotes || []).find(n => n.id == noteId);
+            if (!note) return;
+            const latest = note.attempts && note.attempts[note.attempts.length - 1];
+            const existingAnswer = latest?.answer || '';
+            if (timerMode) {
+                timerStart = Date.now();
+                if (timerInterval) clearInterval(timerInterval);
+            }
+            const modal = document.createElement('div');
+            modal.className = 'modal show';
+            modal.id = 'answerModal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 750px;">
+                    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Answer Note: ${escapeHtml(note.topic)}</span>
+                        ${timerMode ? '<span class="timer-display" id="modalTimer">0:00</span>' : ''}
+                    </div>
+                    <div class="question-in-modal">
+                        <strong>Note:</strong>
+                        <div style="margin-top: 8px; color: #1a1a1a;">${renderTextWithImages(note.body || '')}</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Your Answer (Python code editor — write code, prose comments, or both)</label>
+                        <div class="math-symbols-bar">
+                            ${['Σ','∞','√','π','μ','σ','σ²','x̄','χ²','≠','≤','≥','≈','±','∈','∩','∪','⊂','∫'].map(s =>
+                                `<button type="button" class="math-sym-btn" onclick="insertSymbol('${s}')" title="${s}">${s}</button>`
+                            ).join('')}
+                        </div>
+                        <div id="codeEditorWrap"></div>
+                        <textarea id="answerTextarea" style="display:none;"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn-secondary" onclick="closeAnswerModal()">Cancel</button>
+                        <button class="btn-primary" onclick="submitNoteAnswer('${noteId}')">Submit for Feedback</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            window._cmEditor = CodeMirror(document.getElementById('codeEditorWrap'), {
+                value: existingAnswer || '',
+                mode: 'python', theme: 'default', lineNumbers: true,
+                indentUnit: 2, tabSize: 2, indentWithTabs: false,
+                lineWrapping: true, autofocus: true,
+                extraKeys: { 'Tab': (cm) => cm.replaceSelection('  ', 'end') }
+            });
+            window._cmEditor.setSize(null, 280);
+            if (timerMode) {
+                timerInterval = setInterval(() => {
+                    const el = document.getElementById('modalTimer');
+                    if (el) el.textContent = formatTimer(Math.floor((Date.now() - timerStart) / 1000));
+                }, 1000);
+            }
+        }
+
+        async function submitNoteAnswer(noteId) {
+            const note = (currentResource?.studyNotes || []).find(n => n.id == noteId);
+            if (!note) return;
+            const answerText = window._cmEditor ? window._cmEditor.getValue().trim() : '';
+            if (!answerText) { alert('Please write an answer first'); return; }
+
+            const duration = timerMode && timerStart ? Math.floor((Date.now() - timerStart) / 1000) : null;
+            closeAnswerModal();
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10000;';
+            loadingDiv.innerHTML = '<div style="text-align: center;"><div class="loading" style="margin: 0 auto 12px;"></div><div>Getting feedback on your answer...</div></div>';
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const promptText = `You are a statistics tutor grading a student's answer to a study-note question. The student is preparing for the NHH TECH3 retake exam — grade with the rigor a TECH3 sensor (grader) would apply.
+
+TECH3 GRADING ANCHORS (reward / penalize accordingly):
+• Hypotheses must be stated explicitly (both H0 and H_A in plain English) — not stating them costs points.
+• Interpretations must be in CONTEXT (e.g. "the slope means each extra m² costs 1938 NOK"), not just the number.
+• Reward keyword usage: "extrapolation", "confounder", "base rate fallacy", "spurious correlation", "homoskedasticity", "cherrypicking", "within-sample vs population inference".
+• For correlation/causation questions: never let "X causes Y" pass — penalize and explain why.
+• For Monte Carlo: penalize using CLT inside the simulation.
+• For regression assumption checking: all 5 assumptions must be named (linearity, independent errors, constant variance, normality, no multicollinearity).
+• For Python tasks: prefer working, runnable code over prose descriptions.
+
+QUESTION / NOTE (title: "${note.topic}") — text + any [Screenshot N] markers refer to attached images:
+{{NOTE_0}}
+
+STUDENT'S ANSWER:
+${answerText}
+
+Grade the answer and provide actionable feedback. Be honest about gaps but encouraging. Cite the specific TECH3 anchors above when relevant.
+
+Return ONLY JSON (no markdown):
+{
+  "rating": <1-10>,
+  "strengths": "<what they got right>",
+  "improvements": ["<concrete things to do better>"],
+  "missed": ["<key concepts/steps they skipped>"],
+  "clarification": "<the fully correct approach explained briefly>",
+  "intuitiveExample": "<a short worked example or analogy if helpful>"
+}`;
+
+                const response = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-5',
+                        max_tokens: 2000,
+                        messages: buildNotesMessages(promptText, note.body || note.raw || '')
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.content) {
+                    throw new Error(data?.error?.message || data?.details || `API ${response.status}`);
+                }
+                const text = data.content.map(i => i.text || '').join('\n').trim();
+                const feedback = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+                const ratingNum = Number(feedback.rating);
+                feedback.ratingClass = ratingNum >= 8 ? 'excellent' : ratingNum >= 6 ? 'good' : ratingNum >= 4 ? 'fair' : 'poor';
+
+                if (!note.attempts) note.attempts = [];
+                note.attempts.push({ answer: answerText, feedback, duration, timestamp: new Date().toISOString() });
+
+                recordDailyAttempt(ratingNum);
+                saveData();
+                renderResourceContent();
+                updateProgressStats();
+            } catch (err) {
+                console.error('Note feedback error:', err);
+                alert('Failed to get feedback.\n\n' + (err?.message || err));
+            } finally {
+                loadingDiv.remove();
+            }
+        }
+
         // ─── Exercises ─────────────────────────────────────────────────────
         // An exercise = a question the user supplies themselves (typed or
         // pasted as a screenshot). Stored on the resource as `exercises`.
@@ -7881,11 +8018,41 @@ Return ONLY JSON (no markdown fences):
                 const calculation = level2.filter(q => q.type === 'calculation');
                 const code = level2.filter(q => q.type === 'code');
 
+                const noteAttempts = note.attempts || [];
+                const noteLatest = noteAttempts[noteAttempts.length - 1];
+                const noteRating = noteLatest?.feedback?.rating;
+                const noteRatingCls = noteLatest?.feedback?.ratingClass || 'fair';
+
+                let noteAttemptsHtml = '';
+                if (noteAttempts.length > 0) {
+                    noteAttemptsHtml = `<div class="attempts-list">`;
+                    noteAttempts.forEach((a, i) => {
+                        const aid = `note-attempt-${note.id}-${i}`;
+                        const r = a.feedback?.rating;
+                        const rc = a.feedback?.ratingClass || 'fair';
+                        noteAttemptsHtml += `
+                            <div class="attempt-box" onclick="toggleSection('${aid}')">
+                                <div class="attempt-box-header">
+                                    <span class="attempt-box-title">Attempt ${i + 1}</span>
+                                    ${r ? `<span class="rating-score-small rating-${rc}">${r}/10</span>` : ''}
+                                    ${a.duration ? `<span class="attempt-box-time">${formatTimer(a.duration)}</span>` : ''}
+                                    <span class="expand-arrow" id="arrow-${aid}">&#9660;</span>
+                                </div>
+                                <div class="collapsible-body" id="${aid}">
+                                    <div class="attempt-box-answer"><pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${escapeHtml(a.answer)}</pre></div>
+                                    ${a.feedback ? `<div class="attempt-box-feedback">${renderFeedbackContent(a.feedback)}</div>` : ''}
+                                </div>
+                            </div>`;
+                    });
+                    noteAttemptsHtml += `</div>`;
+                }
+
                 html += `
                     <div class="topic-group" id="study-note-${note.id}">
                         <div class="topic-group-header">
-                            <div class="topic-group-title">${escapeHtml(note.topic)}</div>
+                            <div class="topic-group-title">${escapeHtml(note.topic)} ${noteRating ? `<span class="rating-score-small rating-${noteRatingCls}" style="margin-left: 8px;">${noteRating}/10</span>` : ''}</div>
                             <div style="display: flex; gap: 4px;">
+                                <button class="btn-generate-more" onclick="openNoteAnswerModal('${note.id}')">${noteAttempts.length > 0 ? 'Try Again' : 'Answer'}</button>
                                 <button class="btn-generate-more" onclick="studyNote(${note.id})">Study</button>
                                 <button class="btn-generate-more" onclick="editStudyNote(${note.id})">Edit</button>
                                 <button class="btn-delete-question" onclick="deleteStudyNote(${note.id})" title="Delete note">x</button>
@@ -7893,6 +8060,7 @@ Return ONLY JSON (no markdown fences):
                         </div>
                         ${renderImportanceBadge(note)}
                         <div class="study-note-body">${renderNoteBodyWithCode(note.id, note.body || '')}</div>
+                        ${noteAttemptsHtml}
                         ${renderContentThread('note', note.id, note.thread)}
                         ${renderContentAskBar('note', note.id)}
                 `;
