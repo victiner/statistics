@@ -6013,7 +6013,7 @@ Title:`
                                 </div>
                             </div>
                             ${(questionSource === 'notes' || questionSource === 'exercises') ? `
-                            <button class="generate-btn" onclick="pregenerateAllSuggestedAnswers()" title="Pre-generate best suggested answers (with Python) for every note and exercise">Pre-generate Answers</button>
+                            <button class="generate-btn" onclick="pregenerateAllSuggestedAnswers()" title="Pre-generate best answers (with Python) for notes/exercises not yet answered or scored below 5/10">Pre-generate Answers</button>
                             ` : ''}
                         </div>
                     </div>
@@ -7339,7 +7339,7 @@ Return ONLY JSON (no markdown):
 
 ${TECH3_EXAM_STYLE}
 
-Write your response in Markdown with EXACTLY these four sections, each introduced by a "## " heading and using concise bullet points (one idea per bullet):
+Write your response in Markdown with EXACTLY these four sections, each introduced by a "## " heading and using concise bullet points (one idea per bullet). Keep the WHOLE answer concise — aim for ~600–700 words total; favor tight bullets over prose and cut anything not exam-relevant:
 
 ## Best Answer
 - The correct, complete answer to the question, as tight bullet points.
@@ -7348,7 +7348,7 @@ Write your response in Markdown with EXACTLY these four sections, each introduce
 - The reasoning and intuition behind the answer: definitions, the "why", and any key conditions or assumptions (e.g. "assumes the variable is normally distributed").
 
 ## Python Implementation
-- One short intro bullet, then a complete, runnable Python code block (numpy / pandas / scipy.stats / statsmodels as appropriate) inside a fenced \`\`\`python code block.
+- A complete but DIRECT, exam-realistic Python solution — write it the way you would actually answer on the TECH3 exam (which is taken in Python): idiomatic numpy / pandas / scipy.stats / statsmodels, straight to the computation, using the built-in test/fit functions (e.g. scipy.stats.ttest_ind, chi2_contingency, statsmodels OLS) rather than re-deriving formulas by hand. No decorative plotting or boilerplate unless the question genuinely needs it. Put it in ONE fenced \`\`\`python code block.
 - Then 1–3 bullets interpreting the output IN CONTEXT (not just the number). State hypotheses (H0 and H_A in plain English) when the question involves a test.
 
 ## Connections & Exam Perspective
@@ -7416,10 +7416,16 @@ Return ONLY the Markdown answer with those four sections. No JSON, no preamble l
                 for (const e of (r.exercises  || [])) jobs.push({ item: e, kind: 'exercise' });
             }
             if (jobs.length === 0) { alert('No notes or exercises found.'); return; }
-            const todo = force ? jobs : jobs.filter(j => !j.item.suggestedAnswer);
-            if (todo.length === 0) { alert('All notes and exercises already have a suggested answer.'); return; }
+            // Only process items the student hasn't mastered yet: never answered,
+            // or whose best attempt scored below 5/10.
+            const bestScore = (item) => {
+                const a = item.attempts || [];
+                return a.length ? Math.max(...a.map(x => Number(x.feedback?.rating) || 0)) : null;
+            };
+            const todo = jobs.filter(j => { const s = bestScore(j.item); return s === null || s < 5; });
+            if (todo.length === 0) { alert('Nothing to do — every note and exercise has already been answered with a score of 5/10 or higher.'); return; }
 
-            if (!confirm(`Generate "best answer" suggested answers for ${todo.length} item(s) (notes + exercises across all resources)?\n\nThis makes ${todo.length} API call(s) and may take a few minutes.${force ? ' Existing suggested answers will be regenerated in the new format.' : ''}`)) return;
+            if (!confirm(`Generate "best answer" suggested answers for ${todo.length} item(s) — only those not yet answered or scored below 5/10 (notes + exercises across all resources).\n\nThis makes ${todo.length} API call(s) and may take a few minutes.`)) return;
 
             _pregenCancel = false;
             const overlay = document.createElement('div');
