@@ -6012,6 +6012,9 @@ Title:`
                                     <button class="generate-dropdown-item" onclick="generateWithLevel('all')">Both Levels</button>
                                 </div>
                             </div>
+                            ${(questionSource === 'notes' || questionSource === 'exercises') ? `
+                            <button class="generate-btn" onclick="pregenerateAllSuggestedAnswers()" title="Pre-generate best suggested answers (with Python) for every note and exercise">Pre-generate Answers</button>
+                            ` : ''}
                         </div>
                     </div>
                     ${questionSource === 'notes' ? `
@@ -7298,6 +7301,210 @@ Return ONLY JSON (no markdown):
             }
         }
 
+        // ─── Suggested answers ─────────────────────────────────────────────
+        // A "Suggested Answer" is a detailed, Python-focused model solution for
+        // a note question or an exercise. It is generated on first request,
+        // cached on the item (item.suggestedAnswer) and persisted, so every
+        // later click pops it up instantly. Shared by notes and exercises so
+        // both use the exact same format.
+        function getSuggestedAnswerOwner(kind, ownerId) {
+            const list = kind === 'note'
+                ? (currentResource?.studyNotes || [])
+                : (currentResource?.exercises || []);
+            return list.find(o => o.id == ownerId) || null;
+        }
+
+        async function openSuggestedAnswer(kind, ownerId) {
+            const item = getSuggestedAnswerOwner(kind, ownerId);
+            if (!item) return;
+            if (item.suggestedAnswer) {
+                showSuggestedAnswerModal(item, kind);
+                return;
+            }
+            await generateSuggestedAnswer(item, kind, true);
+        }
+
+        // Builds the shared "best answer" prompt used for both single-item and
+        // batch generation. Fixed format: bulleted best answer, bulleted
+        // explanation, a Python implementation, and a cross-topic exam-perspective
+        // section that connects this concept to the student's other topics.
+        function buildSuggestedAnswerPrompt(item, kind) {
+            const title = item.topic || (kind === 'note' ? 'Note' : 'Exercise');
+            const otherTopics = Object.keys(topics || {})
+                .filter(t => t && t !== title)
+                .slice(0, 60);
+            const topicList = otherTopics.length ? otherTopics.map(t => `- ${t}`).join('\n') : '- (none recorded yet)';
+
+            return `You are an expert statistics tutor preparing a student for the NHH TECH3 retake exam, which is written and answered in Python. Produce the "best" model answer to the ${kind === 'note' ? 'study-note question' : 'exercise'} below.
+
+${TECH3_EXAM_STYLE}
+
+Write your response in Markdown with EXACTLY these four sections, each introduced by a "## " heading and using concise bullet points (one idea per bullet):
+
+## Best Answer
+- The correct, complete answer to the question, as tight bullet points.
+
+## Explanation
+- The reasoning and intuition behind the answer: definitions, the "why", and any key conditions or assumptions (e.g. "assumes the variable is normally distributed").
+
+## Python Implementation
+- One short intro bullet, then a complete, runnable Python code block (numpy / pandas / scipy.stats / statsmodels as appropriate) inside a fenced \`\`\`python code block.
+- Then 1–3 bullets interpreting the output IN CONTEXT (not just the number). State hypotheses (H0 and H_A in plain English) when the question involves a test.
+
+## Connections & Exam Perspective
+- How this concept relates to OTHER exam topics: similarities, contrasts, shared assumptions, or how one concept builds on another (e.g. "like the t-test, ANOVA assumes normal, independent, equal-variance groups"). Reference related topics by name and explain WHY the connection matters for the exam.
+
+OTHER TOPICS THE STUDENT IS STUDYING (draw connections to the genuinely relevant ones; ignore the rest):
+${topicList}
+
+QUESTION / ${kind === 'note' ? 'NOTE' : 'EXERCISE'} (title: "${title}") — text + any [Screenshot N] markers refer to attached images:
+{{NOTE_0}}
+
+Return ONLY the Markdown answer with those four sections. No JSON, no preamble like "Here is the answer".`;
+        }
+
+        // Pure generation: calls the API and returns the markdown answer string.
+        // No UI side effects — used by both the single-click and batch paths.
+        async function fetchSuggestedAnswer(item, kind) {
+            const promptText = buildSuggestedAnswerPrompt(item, kind);
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-5',
+                    max_tokens: 4000,
+                    messages: buildNotesMessages(promptText, item.body || item.raw || (item.topic || ''))
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.content) {
+                throw new Error(data?.error?.message || data?.details || `API ${response.status}`);
+            }
+            return data.content.map(i => i.text || '').join('\n').trim();
+        }
+
+        async function generateSuggestedAnswer(item, kind, thenShow) {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 11000;';
+            loadingDiv.innerHTML = '<div style="text-align: center;"><div class="loading" style="margin: 0 auto 12px;"></div><div>Preparing suggested answer...</div></div>';
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const text = await fetchSuggestedAnswer(item, kind);
+                item.suggestedAnswer = text;
+                item.suggestedAnswerAt = new Date().toISOString();
+                saveData();
+                renderResourceContent();
+                if (thenShow) showSuggestedAnswerModal(item, kind);
+            } catch (err) {
+                console.error('Suggested answer error:', err);
+                alert('Failed to prepare suggested answer.\n\n' + (err?.message || err));
+            } finally {
+                loadingDiv.remove();
+            }
+        }
+
+        // Batch pre-generation across ALL resources. Throttled (small concurrency)
+        // so it doesn't trip API rate limits. Shows a progress overlay with a Stop
+        // button. Items that fail are left without an answer so they can be retried
+        // individually.
+        let _pregenCancel = false;
+        async function pregenerateAllSuggestedAnswers(force = true) {
+            const jobs = [];
+            for (const r of resources) {
+                for (const n of (r.studyNotes || [])) jobs.push({ item: n, kind: 'note' });
+                for (const e of (r.exercises  || [])) jobs.push({ item: e, kind: 'exercise' });
+            }
+            if (jobs.length === 0) { alert('No notes or exercises found.'); return; }
+            const todo = force ? jobs : jobs.filter(j => !j.item.suggestedAnswer);
+            if (todo.length === 0) { alert('All notes and exercises already have a suggested answer.'); return; }
+
+            if (!confirm(`Generate "best answer" suggested answers for ${todo.length} item(s) (notes + exercises across all resources)?\n\nThis makes ${todo.length} API call(s) and may take a few minutes.${force ? ' Existing suggested answers will be regenerated in the new format.' : ''}`)) return;
+
+            _pregenCancel = false;
+            const overlay = document.createElement('div');
+            overlay.id = 'pregenOverlay';
+            overlay.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px 28px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 12000; text-align: center; min-width: 280px;';
+            overlay.innerHTML = `
+                <div class="loading" style="margin: 0 auto 12px;"></div>
+                <div id="pregenStatus" style="font-weight:600;">Starting…</div>
+                <div id="pregenSub" style="color:#6b7280; font-size:13px; margin-top:4px;"></div>
+                <button class="btn-secondary" style="margin-top:14px;" onclick="_pregenCancel = true; this.disabled = true; this.textContent='Stopping…';">Stop</button>
+            `;
+            document.body.appendChild(overlay);
+            const setStatus = (done, total, failed) => {
+                const s = document.getElementById('pregenStatus');
+                const sub = document.getElementById('pregenSub');
+                if (s) s.textContent = `Generating ${done} of ${total}…`;
+                if (sub) sub.textContent = failed > 0 ? `${failed} failed (can retry individually)` : '';
+            };
+
+            let done = 0, failed = 0, cursor = 0;
+            const CONCURRENCY = 3;
+            setStatus(0, todo.length, 0);
+            async function worker() {
+                while (cursor < todo.length && !_pregenCancel) {
+                    const job = todo[cursor++];
+                    try {
+                        const text = await fetchSuggestedAnswer(job.item, job.kind);
+                        job.item.suggestedAnswer = text;
+                        job.item.suggestedAnswerAt = new Date().toISOString();
+                    } catch (e) {
+                        console.error('pregen failed for', job.item?.topic, e);
+                        failed++;
+                    }
+                    done++;
+                    setStatus(done, todo.length, failed);
+                    if (done % 5 === 0) saveData();
+                }
+            }
+            await Promise.all(Array.from({ length: Math.min(CONCURRENCY, todo.length) }, worker));
+
+            saveData();
+            renderResourceContent();
+            overlay.remove();
+            const cancelled = _pregenCancel;
+            alert(`${cancelled ? 'Stopped' : 'Done'}: ${done - failed} generated${failed ? `, ${failed} failed` : ''}${cancelled ? `, ${todo.length - done} skipped` : ''}.`);
+        }
+
+        function showSuggestedAnswerModal(item, kind) {
+            const title = item.topic || (kind === 'note' ? 'Note' : 'Exercise');
+            const modal = document.createElement('div');
+            modal.className = 'modal show';
+            modal.id = 'suggestedAnswerModal';
+            modal.onclick = (e) => { if (e.target === modal) closeSuggestedAnswerModal(); };
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 840px; max-height: 85vh; display: flex; flex-direction: column;">
+                    <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                        <span>Suggested Answer: ${escapeHtml(title)}</span>
+                        <button class="btn-delete-question" onclick="closeSuggestedAnswerModal()" title="Close">x</button>
+                    </div>
+                    <div class="study-note-body" id="suggestedAnswerBody" style="overflow-y: auto; flex: 1;">${renderMarkdown(item.suggestedAnswer || '')}</div>
+                    <div class="modal-actions" style="margin-top: 16px;">
+                        <button class="btn-secondary" onclick="regenerateSuggestedAnswer('${kind}', '${item.id}')">Regenerate</button>
+                        <button class="btn-primary" onclick="closeSuggestedAnswerModal()">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            const body = document.getElementById('suggestedAnswerBody');
+            if (body) renderMathIn(body);
+        }
+
+        function closeSuggestedAnswerModal() {
+            const modal = document.getElementById('suggestedAnswerModal');
+            if (modal) modal.remove();
+        }
+
+        async function regenerateSuggestedAnswer(kind, ownerId) {
+            const item = getSuggestedAnswerOwner(kind, ownerId);
+            if (!item) return;
+            if (!confirm('Replace the current suggested answer with a freshly generated one?')) return;
+            closeSuggestedAnswerModal();
+            item.suggestedAnswer = '';
+            await generateSuggestedAnswer(item, kind, true);
+        }
+
         // ─── Exercises ─────────────────────────────────────────────────────
         // An exercise = a question the user supplies themselves (typed or
         // pasted as a screenshot). Stored on the resource as `exercises`.
@@ -7639,6 +7846,7 @@ Return ONLY JSON (no markdown):
                             <div class="topic-group-title">${escapeHtml(ex.topic)} ${rating ? `<span class="rating-score-small rating-${ratingCls}" style="margin-left: 8px;">${rating}/10</span>` : ''}</div>
                             <div style="display: flex; gap: 4px;">
                                 <button class="btn-generate-more" onclick="openExerciseAnswerModal(${ex.id})">${attempts.length > 0 ? 'Try Again' : 'Answer'}</button>
+                                <button class="btn-generate-more" onclick="openSuggestedAnswer('exercise', '${ex.id}')">${ex.suggestedAnswer ? 'Suggested Answer ✓' : 'Suggested Answer'}</button>
                                 <button class="btn-generate-more" onclick="generateFromExercise(${ex.id})">Generate Practice</button>
                                 <button class="btn-generate-more" onclick="editExercise(${ex.id})">Edit</button>
                                 <button class="btn-delete-question" onclick="deleteExercise(${ex.id})" title="Delete exercise">x</button>
@@ -8053,6 +8261,7 @@ Return ONLY JSON (no markdown fences):
                             <div class="topic-group-title">${escapeHtml(note.topic)} ${noteRating ? `<span class="rating-score-small rating-${noteRatingCls}" style="margin-left: 8px;">${noteRating}/10</span>` : ''}</div>
                             <div style="display: flex; gap: 4px;">
                                 <button class="btn-generate-more" onclick="openNoteAnswerModal('${note.id}')">${noteAttempts.length > 0 ? 'Try Again' : 'Answer'}</button>
+                                <button class="btn-generate-more" onclick="openSuggestedAnswer('note', '${note.id}')">${note.suggestedAnswer ? 'Suggested Answer ✓' : 'Suggested Answer'}</button>
                                 <button class="btn-generate-more" onclick="studyNote(${note.id})">Study</button>
                                 <button class="btn-generate-more" onclick="editStudyNote(${note.id})">Edit</button>
                                 <button class="btn-delete-question" onclick="deleteStudyNote(${note.id})" title="Delete note">x</button>
