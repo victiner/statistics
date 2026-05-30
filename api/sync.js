@@ -1,28 +1,39 @@
 // Cloud persistence for the Statistics Study Platform.
-// Stores a single JSON document in Vercel Blob storage.
+// Stores the whole study dataset as a single object in Vercel Blob storage.
 //
-//   GET  /api/sync  -> returns the stored document, or {} if none
-//   POST /api/sync  -> body is the full document to store
+//   GET  /api/sync  -> returns the stored bytes as-is, or {} if none
+//   POST /api/sync  -> stores the request body bytes as-is
 //
-// Why Blob and not Redis: the document is the whole study dataset (resources,
-// notes, answers, progress). It outgrew the Upstash free-tier per-request size
-// cap (~4 MB), so every save started failing with a 500 while reads still
-// worked. Blob has no such per-object cap. PDF binaries still stay in IndexedDB
-// only; pasted screenshots already live in Blob via api/upload-image.js.
+// The body is opaque to this handler: the browser gzips the JSON payload before
+// uploading (see cloudSaveNow/flushCloudSaveSync in index.html) and ungzips on
+// load. We therefore pass raw bytes straight through and never parse them here.
 //
-// NOTE: the POST request body is still bounded by Vercel's ~4.5 MB serverless
-// request limit. If the payload approaches that, compress it in the browser
-// before POSTing (the app already bundles pako) — that's the next ceiling.
+// History: storage was Upstash Redis, but the doc outgrew its free-tier ~4 MB
+// per-request cap (every save 500'd). Moved to Blob (no per-object cap). The
+// remaining limit is Vercel's ~4.5 MB serverless *request* body — which is why
+// the client now gzips (~4.5 MB JSON -> ~3.3 MB on the wire). PDFs stay in
+// IndexedDB; screenshots live in Blob via api/upload-image.js.
 
 import { put, list } from '@vercel/blob';
 
 const PATHNAME = 'studydata/default.json';
 
+// Read the raw request body ourselves; the payload is gzip, not JSON, so the
+// default body parser must be off.
 export const config = {
   api: {
-    bodyParser: { sizeLimit: '6mb' },
+    bodyParser: false,
   },
 };
+
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
 
 // Find the stored document blob. We write with a stable pathname
 // (addRandomSuffix:false), so there's at most one.
@@ -32,48 +43,57 @@ async function findBlob() {
   return blobs.find((b) => b.pathname === PATHNAME) || blobs[0];
 }
 
+function sendEmpty(res) {
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(200).end('{}');
+}
+
 export default async function handler(req, res) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return res.status(500).json({
-      error:
-        'Vercel Blob is not configured. Add a Blob store to this project in the Vercel dashboard — that creates the BLOB_READ_WRITE_TOKEN env var automatically.',
-    });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).end(
+      JSON.stringify({
+        error:
+          'Vercel Blob is not configured. Add a Blob store to this project in the Vercel dashboard — that creates the BLOB_READ_WRITE_TOKEN env var automatically.',
+      })
+    );
   }
 
   try {
     if (req.method === 'GET') {
       const blob = await findBlob();
-      if (!blob) return res.status(200).json({});
+      if (!blob) return sendEmpty(res);
       // Cache-bust: a same-pathname overwrite can otherwise be served stale
-      // from the CDN for a short while. The uploadedAt timestamp changes on
-      // every write, so it makes a unique URL per version.
+      // from the CDN. uploadedAt changes on every write -> unique URL per version.
       const v = blob.uploadedAt ? new Date(blob.uploadedAt).getTime() : Date.now();
       const r = await fetch(`${blob.url}?v=${v}`, { cache: 'no-store' });
-      if (!r.ok) return res.status(200).json({});
-      const text = await r.text();
-      try {
-        return res.status(200).json(JSON.parse(text));
-      } catch {
-        return res.status(200).json({});
-      }
+      if (!r.ok) return sendEmpty(res);
+      const buf = Buffer.from(await r.arrayBuffer());
+      res.setHeader(
+        'Content-Type',
+        r.headers.get('content-type') || 'application/octet-stream'
+      );
+      return res.status(200).end(buf);
     }
 
     if (req.method === 'POST' || req.method === 'PUT') {
-      const body =
-        typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
+      const body = await readRawBody(req);
+      const contentType = req.headers['content-type'] || 'application/octet-stream';
       await put(PATHNAME, body, {
         access: 'public',
-        contentType: 'application/json',
+        contentType,
         addRandomSuffix: false,
         allowOverwrite: true,
       });
-      return res.status(200).json({ ok: true });
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).end(JSON.stringify({ ok: true }));
     }
 
     res.setHeader('Allow', 'GET, POST');
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).end(JSON.stringify({ error: 'Method not allowed' }));
   } catch (err) {
     console.error('sync failed:', err);
-    return res.status(500).json({ error: err.message || 'Sync failed' });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).end(JSON.stringify({ error: err.message || 'Sync failed' }));
   }
 }
