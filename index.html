@@ -3622,7 +3622,11 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
                 updateSyncIndicator();
                 const res = await fetch('/api/sync', { method: 'GET' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
+                // Body may be gzip (new format) or plain JSON (legacy doc / empty {}).
+                const buf = new Uint8Array(await res.arrayBuffer());
+                let data;
+                try { data = JSON.parse(pako.ungzip(buf, { to: 'string' })); }
+                catch { data = JSON.parse(new TextDecoder().decode(buf) || '{}'); }
                 cloudSyncStatus = 'ok';
                 updateSyncIndicator();
                 return data && Object.keys(data).length ? data : null;
@@ -3642,10 +3646,14 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
             const attemptedGen = cloudDirtyGen;
             try {
                 const payload = buildSyncPayload();
+                // gzip before upload: keeps us well under Vercel's ~4.5 MB
+                // serverless request-body limit. The raw payload grew past it,
+                // which is what produced the "Sync FAILED" 413s.
+                const gz = pako.gzip(JSON.stringify(payload));
                 const res = await fetch('/api/sync', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'application/octet-stream' },
+                    body: new Blob([gz], { type: 'application/octet-stream' })
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 cloudSyncStatus = 'ok';
@@ -3708,7 +3716,8 @@ PROGRAMMING WEIGHTING (IMPORTANT): The user has been told the next exam will hav
             if (!cloudSavePending() && !cloudSaveInFlight) return;
             try {
                 const snapshotGen = cloudDirtyGen;
-                const blob = new Blob([JSON.stringify(buildSyncPayload())], { type: 'application/json' });
+                const gz = pako.gzip(JSON.stringify(buildSyncPayload()));
+                const blob = new Blob([gz], { type: 'application/octet-stream' });
                 const sent = navigator.sendBeacon('/api/sync', blob);
                 if (sent) cloudSavedGen = snapshotGen;
             } catch (err) {
