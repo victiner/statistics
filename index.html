@@ -3294,6 +3294,160 @@
             margin-top: 6px;
         }
         .mock-answer-details summary { cursor: pointer; font-weight: 600; color: #6b7280; font-size: 12px; }
+
+        /* ============================================================
+           MOBILE / RESPONSIVE LAYER
+           The desktop layout is a fixed 3-column grid (sidebar | main |
+           right-sidebar). On narrow screens we collapse to a single full
+           -width column and turn both sidebars into slide-in drawers that
+           overlay the content, opened via the existing edge toggle tabs.
+           ============================================================ */
+
+        /* Backdrop shown behind an open mobile drawer */
+        .mobile-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 150;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .mobile-backdrop.show {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 860px) {
+            html, body { overflow: hidden; }
+
+            /* Single full-width column; sidebars become overlay drawers */
+            .app,
+            .app.left-collapsed,
+            .app.right-collapsed,
+            .app.left-collapsed.right-collapsed {
+                display: block;
+                grid-template-columns: none;
+            }
+
+            .main-content {
+                height: 100vh;
+                height: 100dvh;
+                width: 100%;
+                overflow-x: hidden;
+            }
+
+            /* Drawers: off-canvas by default, slide in when open */
+            .sidebar,
+            .right-sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                height: 100vh;
+                height: 100dvh;
+                width: 86%;
+                max-width: 340px;
+                z-index: 200;
+                transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+                will-change: transform;
+                /* Override desktop collapse rules that hide the columns */
+                opacity: 1 !important;
+                pointer-events: auto !important;
+            }
+            .sidebar {
+                left: 0;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+            }
+            .right-sidebar {
+                right: 0;
+                transform: translateX(100%);
+                box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
+            }
+            .app.mobile-left-open .sidebar { transform: translateX(0); }
+            .app.mobile-right-open .right-sidebar { transform: translateX(0); }
+
+            /* Edge toggle tabs become clear, tappable drawer handles.
+               Anchored to the viewport (fixed) so slight content overflow
+               can never push the right-edge handle off-screen. */
+            .sidebar-toggle {
+                position: fixed;
+                top: 50%;
+                width: 30px;
+                height: 72px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #ffffff;
+                border-color: transparent;
+                font-size: 18px;
+                box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+                z-index: 120;
+            }
+            /* Hide the handle for whichever drawer is currently open */
+            .app.mobile-left-open .sidebar-toggle-left,
+            .app.mobile-right-open .sidebar-toggle-right {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            /* Roomier tap targets / less chrome padding */
+            .content-header { padding: 16px 18px; }
+            .content-title { font-size: 21px; margin-bottom: 6px; }
+            .content-meta { gap: 12px; font-size: 13px; flex-wrap: wrap; }
+            .content-body { padding: 18px 16px; }
+            .slide-viewer { padding: 18px; margin-bottom: 20px; }
+
+            /* Flash cards: comfortable two-up / one-up grid */
+            .flash-cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 12px;
+            }
+
+            /* Stacked stat / metric grids */
+            .stats-grid,
+            .topic-stats-grid,
+            .home-grid { grid-template-columns: 1fr; }
+
+            /* Modals fill the screen and scroll internally */
+            .modal { align-items: flex-end; }
+            .modal-content {
+                width: 100%;
+                max-width: none;
+                max-height: 92dvh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 18px 18px 0 0;
+                padding: 22px 18px calc(22px + env(safe-area-inset-bottom));
+            }
+            .modal-header { font-size: 20px; margin-bottom: 18px; }
+
+            /* Keep wide math / tables from forcing horizontal page scroll */
+            .katex-display { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+            .content-body table { display: block; overflow-x: auto; }
+            img, .note-image, .slide-image { max-width: 100%; height: auto; }
+        }
+
+        @media (max-width: 480px) {
+            /* Keep a backdrop "peek" strip so tapping outside still closes the
+               drawer (a full-width drawer would hide every close affordance). */
+            .sidebar, .right-sidebar { width: 90%; max-width: 360px; }
+
+            .content-title { font-size: 19px; }
+            .content-body { padding: 14px 12px; }
+
+            /* One flash card per row, a touch taller for readability */
+            .flash-cards-grid { grid-template-columns: 1fr; gap: 12px; }
+            .flash-card,
+            .flash-card-inner { min-height: 200px; }
+            .flash-card-front,
+            .flash-card-back { padding: 32px 16px 24px; font-size: 15px; }
+            .flash-card-question { font-size: 16px; }
+
+            .daily-goal-row,
+            .backup-row { grid-template-columns: 1fr; }
+
+            .nav-tab { padding: 14px 10px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
@@ -3448,6 +3602,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Backdrop behind mobile drawers (tap to close) -->
+    <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileDrawers()"></div>
 
     <!-- Upload Modal -->
     <div class="modal" id="uploadModal">
@@ -4842,11 +4999,77 @@ Title:`
             if (rBtn) { rBtn.textContent = right ? '‹' : '›'; rBtn.title = right ? 'Show right sidebar' : 'Hide right sidebar'; }
         }
         function toggleSidebar(side) {
+            // On narrow screens the sidebars are slide-in overlay drawers
+            // rather than grid columns, so toggle the drawer state instead.
+            if (isMobileLayout()) {
+                const app = document.querySelector('.app');
+                if (!app) return;
+                const cls = side === 'left' ? 'mobile-left-open' : 'mobile-right-open';
+                const other = side === 'left' ? 'mobile-right-open' : 'mobile-left-open';
+                const willOpen = !app.classList.contains(cls);
+                app.classList.remove(other);
+                app.classList.toggle(cls, willOpen);
+                updateMobileBackdrop();
+                updateMobileToggleIcons();
+                return;
+            }
             const key = side === 'left' ? 'leftCollapsed' : 'rightCollapsed';
             const current = localStorage.getItem(key) === '1';
             localStorage.setItem(key, current ? '0' : '1');
             applySidebarState();
         }
+
+        // ── Mobile drawer helpers ──────────────────────────────────────────
+        function isMobileLayout() {
+            return window.matchMedia('(max-width: 860px)').matches;
+        }
+        function updateMobileBackdrop() {
+            const app = document.querySelector('.app');
+            const bd = document.getElementById('mobileBackdrop');
+            if (!app || !bd) return;
+            const open = app.classList.contains('mobile-left-open') || app.classList.contains('mobile-right-open');
+            bd.classList.toggle('show', open && isMobileLayout());
+        }
+        function closeMobileDrawers() {
+            const app = document.querySelector('.app');
+            if (!app) return;
+            app.classList.remove('mobile-left-open', 'mobile-right-open');
+            updateMobileBackdrop();
+            updateMobileToggleIcons();
+        }
+        // Point the edge handles "inward" when closed (invite opening) and
+        // "outward" when their drawer is open (invite closing).
+        function updateMobileToggleIcons() {
+            const app = document.querySelector('.app');
+            const lBtn = document.getElementById('toggleLeftSidebar');
+            const rBtn = document.getElementById('toggleRightSidebar');
+            if (!app || !lBtn || !rBtn) return;
+            if (isMobileLayout()) {
+                lBtn.textContent = app.classList.contains('mobile-left-open') ? '‹' : '›';
+                rBtn.textContent = app.classList.contains('mobile-right-open') ? '›' : '‹';
+                lBtn.title = 'Resources & menu';
+                rBtn.title = 'Notes & overview';
+            }
+        }
+
+        // Auto-close the left drawer after picking something from it on mobile.
+        document.addEventListener('click', (e) => {
+            if (!isMobileLayout()) return;
+            const inLeft = e.target.closest('.sidebar');
+            if (inLeft && e.target.closest('button, .resource-item, [onclick]')) {
+                // Let the original handler run first, then slide the drawer away.
+                setTimeout(closeMobileDrawers, 0);
+            }
+        });
+
+        // Reset drawer state when crossing the breakpoint (e.g. rotate / resize).
+        window.addEventListener('resize', () => {
+            if (!isMobileLayout()) {
+                closeMobileDrawers();
+            } else {
+                updateMobileToggleIcons();
+            }
+        });
 
         // ── Note editor: shared toolbar helpers ────────────────────────────
         // Tracks the most recently focused textarea so insertSymbol/insertText
@@ -11506,6 +11729,7 @@ Return ONLY JSON (no markdown fences):
         // Initialize
         (async () => {
             applySidebarState();
+            updateMobileToggleIcons();
             await loadData();
             renderPlatformOverview();
             document.getElementById('uploadBtn').addEventListener('click', openUploadModal);
